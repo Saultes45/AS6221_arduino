@@ -23,25 +23,26 @@
 * //SparkFun_AS6212_Qwiic.h: Click here to get the library: http://librarymanager/All#SparkFun_AS6212
 * //"MovingAverageFloat.h"   https://github.com/pilotak/MovingAverageFloat
 *
+*
 * TODO
-* Change datarate: CR -- done
-* Try alert mode
-* multisensor with arrays
-* Moving average + increase/decrease -- done
+* Use structure instead of single global variables <---------------
 * STDDEV
 * CRC checksum
+* 
+* 
+* 
+* 
+* 
 * Check sensor are replying, use "---" otherwise -- done
-* Swap arduino for ESP32C3
-* 
-* Swap delay for HW timer ISR --- done
-* 
 * for flag variables, use some #def for states -- done
-* 
-* 
-* Use structure instead of single global variables <---------------
-* 
+* Change datarate: CR -- done
+* Swap delay for HW timer ISR --- done
+* Moving average + increase/decrease -- done
+
+* Swap arduino for ESP32C3
 * Put operations in functions
 * Schnmitt trigger rise low temp
+* Try alert mode
 * 
 * ========================================
 */
@@ -67,8 +68,9 @@
 
 
 #define T_SENSOR_1_ADDRS 0x44
-#define T_SENSOR_2_ADDRS 0x45
+//#define T_SENSOR_2_ADDRS 0x45
 #define NBR_SENSORS 2
+#define T_SENSOR_1_ADDRS 0x44
 
 #define NBR_SAMPLES_MOVAV 5
 #define NBR_FLOAT_DISPLAY 6
