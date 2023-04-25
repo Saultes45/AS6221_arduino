@@ -46,7 +46,7 @@ void setup()
 {
 
   
-  Serial.begin(9600);
+  Serial.begin(USB_BAUDRATE);
   while (!Serial);             // Leonardo: wait for serial monitor
   Serial.println(SO_SKETCH_MESSAGE);
   Serial.println("I2C Scanner");
