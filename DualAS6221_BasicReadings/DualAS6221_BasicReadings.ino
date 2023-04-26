@@ -69,15 +69,17 @@
 
 
 #define T_SENSOR_1_ADDRS 0x44
-//#define T_SENSOR_2_ADDRS 0x45
-#define T_SENSOR_2_ADDRS 0x48
+#define T_SENSOR_2_ADDRS 0x45
+//#define T_SENSOR_2_ADDRS 0x48
 #define NBR_SENSORS 2
+#define NBR_DISPLAY_FIELDS 5
 
 
 #define NBR_SAMPLES_MOVAV 5
+#define NBR_SAMPLES_STD 20
 #define NBR_FLOAT_DISPLAY 6
 
-#define TOLERANCE_MC 7.0 // in milli deg C, defines when we consider the temperature stable
+#define TOLERANCE_MC_PER_S 7.0 // in milli deg C/s, defines when we consider the temperature stable, increasing or decreasing
 #define T_STABLE    0
 #define T_DECREASE  1
 #define T_INCREASE  2
@@ -105,7 +107,7 @@ void sendDataSerial(float raw_1, float raw_2);
 AS6212 sensor1;
 AS6212 sensor2;
 
-Statistic statsSensor1;
+Statistic statsSensor1; //for stddev
 Statistic statsSensor2;
 
 //ISR variables
@@ -298,12 +300,17 @@ if (readSensor == 1) // if the ISR flag is set then new teperature readings are 
   filter_1.add(sensorRawValue1);
   filter_2.add(sensorRawValue2);
 
+  // std dev
+    statsSensor1.add(filter_1.get()*1000000); // in micro C
+    statsSensor2.add(filter_2.get()*1000000); // in micro C
+
+
   //derivative
   diffSensor1_mC = (filter_1.get() - oldSensor1) * 1000; // conversion from C to mC
   diffSensor2_mC = (filter_2.get() - oldSensor2) * 1000; // conversion from C to mC
 
   //check gloabal trend and stability 
-  if (abs(diffSensor1_mC) < TOLERANCE_MC)
+  if (abs(diffSensor1_mC) < TOLERANCE_MC_PER_S)
   {
     // then we can consider the temperature is stable
     globalTrendSensor1 = T_STABLE;
@@ -320,7 +327,7 @@ if (readSensor == 1) // if the ISR flag is set then new teperature readings are 
     }
   }
 
-    if (abs(diffSensor2_mC) < TOLERANCE_MC)
+    if (abs(diffSensor2_mC) < TOLERANCE_MC_PER_S)
   {
     // then we can consider the temperature is stable
     globalTrendSensor2 = T_STABLE;
@@ -348,6 +355,18 @@ if (readSensor == 1) // if the ISR flag is set then new teperature readings are 
 
   // Step #4: prepare for next step
   //---------------------------------
+
+    if (statsSensor1.count() == NBR_SAMPLES_STD)
+  {
+    statsSensor1.clear();
+  }
+
+      if (statsSensor2.count() == NBR_SAMPLES_STD)
+  {
+    statsSensor2.clear();
+  }
+
+  
   oldSensor1 = filter_1.get();
   oldSensor2 = filter_2.get();
 
@@ -437,19 +456,18 @@ t_start = currentTime_MS;
     Serial.print(SERIAL_SEPARATOR);
     Serial.print(globalTrendSensor1, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
+    Serial.print(statsSensor1.variance(), NBR_FLOAT_DISPLAY);
+    Serial.print(SERIAL_SEPARATOR);
     
   }
   else
   {
-    Serial.print(SERIAL_SEPARATOR);  
-    Serial.print(NO_DATA);
-    Serial.print(SERIAL_SEPARATOR);
-    Serial.print(NO_DATA);
-    Serial.print(SERIAL_SEPARATOR);
-    Serial.print(NO_DATA);
-    Serial.print(SERIAL_SEPARATOR);
-    Serial.print(NO_DATA);
-    Serial.print(SERIAL_SEPARATOR);
+     for (int i=0; i<NBR_DISPLAY_FIELDS; i++)
+     { 
+      Serial.print(SERIAL_SEPARATOR);  
+      Serial.print(NO_DATA);
+    }
+      Serial.print(SERIAL_SEPARATOR);
   }
   
 
@@ -474,19 +492,18 @@ t_start = currentTime_MS;
     Serial.print(SERIAL_SEPARATOR);
     Serial.print(globalTrendSensor2, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
+    Serial.print(statsSensor2.variance(), NBR_FLOAT_DISPLAY);
+    Serial.print(SERIAL_SEPARATOR);
     
   }
   else
   {
-    Serial.print(SERIAL_SEPARATOR);  
-    Serial.print(NO_DATA);
-    Serial.print(SERIAL_SEPARATOR);
-    Serial.print(NO_DATA);
-    Serial.print(SERIAL_SEPARATOR);
-    Serial.print(NO_DATA);
-    Serial.print(SERIAL_SEPARATOR);
-    Serial.print(NO_DATA);
-    Serial.print(SERIAL_SEPARATOR);
+     for (int i=0; i<NBR_DISPLAY_FIELDS; i++)
+     { 
+      Serial.print(SERIAL_SEPARATOR);  
+      Serial.print(NO_DATA);
+    }
+      Serial.print(SERIAL_SEPARATOR);
   }
 
   Serial.print("*"); // To indicate the CRC is going to follow
