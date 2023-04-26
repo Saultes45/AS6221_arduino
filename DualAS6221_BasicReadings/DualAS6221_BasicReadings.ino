@@ -22,12 +22,12 @@
 * Ressources (Boards + Libraries Manager)
 * //SparkFun_AS6212_Qwiic.h: Click here to get the library: http://librarymanager/All#SparkFun_AS6212
 * //"MovingAverageFloat.h"   https://github.com/pilotak/MovingAverageFloat
-*
+* //#include "Statistic.h" from Rob Tillaart https://github.com/RobTillaart/Statistic
 *
 * TODO
 * Use structure instead of single global variables <---------------
 * STDDEV
-* CRC checksum
+* CRC checksum, need to have a message as a str->char array
 * 
 * 
 * 
@@ -50,7 +50,8 @@
 
 // -------------------------- Includes --------------------------
 #include "SparkFun_AS6212_Qwiic.h" 
-#include "MovingAverageFloat.h"  
+#include "MovingAverageFloat.h" 
+#include "Statistic.h" // for std dev 
 #include <Wire.h>
 
 
@@ -69,8 +70,9 @@
 
 #define T_SENSOR_1_ADDRS 0x44
 //#define T_SENSOR_2_ADDRS 0x45
+#define T_SENSOR_2_ADDRS 0x48
 #define NBR_SENSORS 2
-#define T_SENSOR_1_ADDRS 0x44
+
 
 #define NBR_SAMPLES_MOVAV 5
 #define NBR_FLOAT_DISPLAY 6
@@ -103,6 +105,9 @@ void sendDataSerial(float raw_1, float raw_2);
 AS6212 sensor1;
 AS6212 sensor2;
 
+Statistic statsSensor1;
+Statistic statsSensor2;
+
 //ISR variables
 boolean toggleLED = 0;
 volatile boolean readSensor = 0;
@@ -124,8 +129,8 @@ uint8_t globalTrendSensor1  = T_UNDEF; // 0 = sensed temperature (after moving a
 uint8_t globalTrendSensor2  = T_UNDEF;
 
 // global structures
-temperatureSensorData dataS1;
-temperatureSensorData dataS2;
+//temperatureSensorData dataS1;
+//temperatureSensorData dataS2;
 
 long int t_start = millis();
 
