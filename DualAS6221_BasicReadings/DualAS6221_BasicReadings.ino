@@ -23,10 +23,13 @@
 * //SparkFun_AS6212_Qwiic.h: Click here to get the library: http://librarymanager/All#SparkFun_AS6212
 * //"MovingAverageFloat.h"   https://github.com/pilotak/MovingAverageFloat
 * //#include "Statistic.h" from Rob Tillaart https://github.com/RobTillaart/Statistic
+* #include <RunningStats.h> from https://github.com/fredlarochelle/RunningStats
+*
+*
 *
 * TODO
 * Use structure instead of single global variables <---------------
-* STDDEV
+* 
 * CRC checksum, need to have a message as a str->char array
 * 
 * 
@@ -38,7 +41,8 @@
 * Change datarate: CR -- done
 * Swap delay for HW timer ISR --- done
 * Moving average + increase/decrease -- done
-
+* STDDEV -- done
+*
 * Swap arduino for ESP32C3
 * Put operations in functions
 * Schnmitt trigger rise low temp
@@ -71,13 +75,14 @@
 #define T_SENSOR_1_ADDRS 0x44
 #define T_SENSOR_2_ADDRS 0x45
 //#define T_SENSOR_2_ADDRS 0x48
-#define NBR_SENSORS 2
+#define NBR_SENSORS 2 //Don't change that
 #define NBR_DISPLAY_FIELDS 5
 
 
-#define NBR_SAMPLES_MOVAV 5
-#define NBR_SAMPLES_STD 20
-#define NBR_FLOAT_DISPLAY 6
+#define NBR_SAMPLES_MOVAV   5 // OLD
+#define NBR_SAMPLES_STD     20 // OLD
+#define NBR_SAMPLES_MOVAV   20
+#define NBR_FLOAT_DISPLAY   6
 
 #define TOLERANCE_MC_PER_S 7.0 // in milli deg C/s, defines when we consider the temperature stable, increasing or decreasing
 #define T_STABLE    0
@@ -109,6 +114,9 @@ AS6212 sensor2;
 
 Statistic statsSensor1; //for stddev
 Statistic statsSensor2;
+
+RunningStats statsSensor_1; //for rolling mean + stddev
+RunningStats statsSensor_2; //for rolling mean + stddev
 
 //ISR variables
 boolean toggleLED = 0;
