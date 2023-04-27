@@ -23,14 +23,15 @@
 * //SparkFun_AS6212_Qwiic.h: Click here to get the library: http://librarymanager/All#SparkFun_AS6212
 * //"MovingAverageFloat.h"   https://github.com/pilotak/MovingAverageFloat
 * //#include "Statistic.h" from Rob Tillaart https://github.com/RobTillaart/Statistic
-* #include <RunningStats.h> from https://github.com/fredlarochelle/RunningStats
-*
+* 
+* #include "statistics.h" https://github.com/bolderflight/statistics for windowed average and std dev
 *
 *
 * TODO
 * Use structure instead of single global variables <---------------
 * 
 * CRC checksum, need to have a message as a str->char array
+* Change separator for seial studio
 * 
 * 
 * 
@@ -57,6 +58,8 @@
 #include "MovingAverageFloat.h" 
 #include "Statistic.h" // for std dev 
 #include <Wire.h>
+//#include <RunningStats.h>
+#include "statistics.h"
 
 
 
@@ -81,7 +84,7 @@
 
 #define NBR_SAMPLES_MOVAV   5 // OLD
 #define NBR_SAMPLES_STD     20 // OLD
-#define NBR_SAMPLES_MOVAV   20
+#define NBR_SAMPLES_MOVSTATS   20
 #define NBR_FLOAT_DISPLAY   6
 
 #define TOLERANCE_MC_PER_S 7.0 // in milli deg C/s, defines when we consider the temperature stable, increasing or decreasing
@@ -107,6 +110,7 @@ struct temperatureSensorData
 // -------------------------- Function declaration  --------------------------
 void i2cQuickScan(void);
 void sendDataSerial(float raw_1, float raw_2);
+void prepareHWTimerInterrupt(void);
 
 // -------------------------- Global variables  --------------------------
 AS6212 sensor1;
@@ -115,8 +119,12 @@ AS6212 sensor2;
 Statistic statsSensor1; //for stddev
 Statistic statsSensor2;
 
-RunningStats statsSensor_1; //for rolling mean + stddev
-RunningStats statsSensor_2; //for rolling mean + stddev
+
+bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_1; //for rolling mean + stddev
+bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_2; //for rolling mean + stddev
+
+
+// since in running stats, the number of samples is private, we need our own variable for that
 
 //ISR variables
 boolean toggleLED = 0;
@@ -260,18 +268,7 @@ void setup()
   //  sensor2.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_4000MS); // 1 time every 4 seconds
 
 
-//set timer1 interrupt at 5Hz (should really be 8Hz)
-  TCCR1A = 0;// set entire TCCR1A register to 0
-  TCCR1B = 0;// same for TCCR1B
-  TCNT1  = 0;//initialize counter value to 0
-  // set compare match register for 1hz increments
-  OCR1A = 3124;// = (16*10^6) / (8*1024) - 1 (must be <65536)
-  // turn on CTC mode
-  TCCR1B |= (1 << WGM12);
-  // Set CS10 and CS12 bits for 1024 prescaler
-  TCCR1B |= (1 << CS12) | (1 << CS10);  
-  // enable timer compare interrupt
-  TIMSK1 |= (1 << OCIE1A);
+
   
 
 t_start = millis();
@@ -308,9 +305,16 @@ if (readSensor == 1) // if the ISR flag is set then new teperature readings are 
   filter_1.add(sensorRawValue1);
   filter_2.add(sensorRawValue2);
 
-  // std dev
-    statsSensor1.add(filter_1.get()*1000000); // in micro C
-    statsSensor2.add(filter_2.get()*1000000); // in micro C
+//  // std dev
+//    statsSensor1.add(filter_1.get()*1000); // in  mC
+//    statsSensor2.add(filter_2.get()*1000); // in mC
+
+rollingStatsSensor_1.Update(sensorRawValue1);
+  Serial.print(rollingStatsSensor_1.mean());
+    Serial.print("\t");
+    Serial.print(rollingStatsSensor_1.var());
+    Serial.print("\t");
+    Serial.println(rollingStatsSensor_1.std());
 
 
   //derivative
@@ -364,15 +368,27 @@ if (readSensor == 1) // if the ISR flag is set then new teperature readings are 
   // Step #4: prepare for next step
   //---------------------------------
 
-    if (statsSensor1.count() == NBR_SAMPLES_STD)
-  {
-    statsSensor1.clear();
-  }
-
-      if (statsSensor2.count() == NBR_SAMPLES_STD)
-  {
-    statsSensor2.clear();
-  }
+//    if (statsSensor1.count() == NBR_SAMPLES_STD)
+//  {
+//    statsSensor1.clear();
+//  }
+//
+//      if (statsSensor2.count() == NBR_SAMPLES_STD)
+//  {
+//    statsSensor2.clear();
+//  }
+//
+//      if (rollingStatsSensor_1.count() == NBR_SAMPLES_STD)
+//  {
+//    rollingStatsSensor_1.clear();
+//  }
+//
+//      if (rollingStatsSensor_1.count() == NBR_SAMPLES_STD)
+//  {
+//    rollingStatsSensor_1.clear();
+//  }
+//
+//  NBR_SAMPLES_MOVSTATS
 
   
   oldSensor1 = filter_1.get();
@@ -521,6 +537,28 @@ t_start = currentTime_MS;
 #endif
 
   Serial.println();  
+}// END OF FUNCTION
+
+
+
+
+//-------------------------------------------------
+void prepareHWTimerInterrupt(void)
+{
+
+  //set timer1 interrupt at 5Hz (should really be 8Hz)
+  TCCR1A = 0;// set entire TCCR1A register to 0
+  TCCR1B = 0;// same for TCCR1B
+  TCNT1  = 0;//initialize counter value to 0
+  // set compare match register for 1hz increments
+  OCR1A = 3124;// = (16*10^6) / (8*1024) - 1 (must be <65536)
+  // turn on CTC mode
+  TCCR1B |= (1 << WGM12);
+  // Set CS10 and CS12 bits for 1024 prescaler
+  TCCR1B |= (1 << CS12) | (1 << CS10);  
+  // enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
+
 }// END OF FUNCTION
 
 
