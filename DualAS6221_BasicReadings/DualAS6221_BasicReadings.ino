@@ -76,8 +76,8 @@
 
 
 #define T_SENSOR_1_ADDRS 0x44
-#define T_SENSOR_2_ADDRS 0x45
-//#define T_SENSOR_2_ADDRS 0x48
+//#define T_SENSOR_2_ADDRS 0x45
+#define T_SENSOR_2_ADDRS 0x48
 #define NBR_SENSORS 2 //Don't change that
 #define NBR_DISPLAY_FIELDS 5
 
@@ -118,6 +118,11 @@ AS6212 sensor2;
 
 Statistic statsSensor1; //for stddev
 Statistic statsSensor2;
+
+/* to put in the struct [5]
+bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_1;
+uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
+*/
 
 
 bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_1; //for rolling mean + stddev
