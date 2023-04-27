@@ -113,17 +113,22 @@ struct temperatureSensorData
 void i2cQuickScan(void);
 void sendDataSerial(float raw_1, float raw_2);
 void prepareHWTimerInterrupt(void);
+void checkSensors(void);
 
 // -------------------------- Global variables  --------------------------
 AS6212 sensor1;
 AS6212 sensor2;
 
-Statistic statsSensor1; //for stddev
-Statistic statsSensor2;
+//Statistic statsSensor1; //for stddev
+//Statistic statsSensor2;
 
-/* to put in the struct [5]
+/* to put in the struct [6]
+ *  AS6212 sensor1;
 bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_1;
 uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
+float diffSensor1_mC = 0.0; // differerence between 2 iterations in milliC
+float oldSensor1 = 0.0;
+uint8_t globalTrendSensor1  = T_UNDEF;
 */
 
 
@@ -138,7 +143,7 @@ boolean toggleLED = 0;
 volatile boolean readSensor = 0;
 
 // Buffer will be 16 samples long, it will take 16 * sizeof(float) = 64 bytes of RAM
-MovingAverageFloat <NBR_SAMPLES_MOVAV> filter_1;
+MovingAverageFloat <NBR_SAMPLES_MOVAV> filter_1; // TO BE REPLACED
 MovingAverageFloat <NBR_SAMPLES_MOVAV> filter_2;
 
 uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
@@ -199,44 +204,8 @@ void setup()
   i2cQuickScan();
 
 
-
-  // Check to see if AS6212 Qwiic is present on the bus
-  // Note, here we are calling begin() with no arguments = defaults (address:0x48, I2C-port:Wire)
-  if (sensor1.begin(T_SENSOR_1_ADDRS) == false)
-  {
-    Serial.println("AS6221 #1 failed to respond. Please check wiring and possibly the I2C address.");
-    isRespondingSensor1 = S_MIA;   
-  }
-  if (sensor2.begin(T_SENSOR_2_ADDRS) == false)
-  {
-    Serial.println("AS6221 #2 failed to respond. Please check wiring and possibly the I2C address."); 
-    isRespondingSensor2 = S_MIA;  
-  }
-
-
-
-
-  if (isRespondingSensor1 == S_ALIVE)
-  {
-    // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
-    if (sensor1.getSleepMode() == true)
-    {
-      Serial.println("Sensor #1 was asleep, waking up now");
-      sensor1.sleepModeOff();
-      delay(150); // wait for it to wake up
-    }
-
-    sensor1.setDefaultSettings(); // return to default settings 
-    // in case they were set differenctly by a previous example
-
-    sensor1.setTHighC(32); // set high threshhold
-    sensor1.setTLowC(23); // set low threshhold
-
-    Serial.print("\tThighF: ");
-    Serial.print(sensor1.getTHighF(), 2);
-    Serial.print("\tTlowF: ");
-    Serial.println(sensor1.getTLowF(), 2); // no getTLowC function
-  }
+  checkSensors();
+  
 
 
 
@@ -570,6 +539,62 @@ void prepareHWTimerInterrupt(void)
   TIMSK1 |= (1 << OCIE1A);
 
 }// END OF FUNCTION
+
+
+//-------------------------------------------------
+void checkSensors(void)
+{
+
+// Check to see if AS6212 Qwiic is present on the bus
+  // Note, here we are calling begin() with no arguments = defaults (address:0x48, I2C-port:Wire)
+  if (sensor1.begin(T_SENSOR_1_ADDRS) == false)
+  {
+    Serial.println("AS6221 #1 failed to respond. Please check wiring and possibly the I2C address.");
+    isRespondingSensor1 = S_MIA;   
+  }
+  if (sensor2.begin(T_SENSOR_2_ADDRS) == false)
+  {
+    Serial.println("AS6221 #2 failed to respond. Please check wiring and possibly the I2C address."); 
+    isRespondingSensor2 = S_MIA;  
+  }
+
+
+
+
+  if (isRespondingSensor1 == S_ALIVE)
+  {
+    // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
+    if (sensor1.getSleepMode() == true)
+    {
+      Serial.println("Sensor #1 was asleep, waking up now");
+      sensor1.sleepModeOff();
+      delay(150); // wait for it to wake up
+    }
+
+    sensor1.setDefaultSettings(); // return to default settings 
+    // in case they were set differenctly by a previous example
+
+    sensor1.setTHighC(32); // set high threshhold
+    sensor1.setTLowC(23); // set low threshhold
+
+    Serial.print("\tThighF: ");
+    Serial.print(sensor1.getTHighF(), 2);
+    Serial.print("\tTlowF: ");
+    Serial.println(sensor1.getTLowF(), 2); // no getTLowC function
+  }
+
+}// END OF FUNCTION
+
+
+
+//-------------------------------------------------
+void wakeupSensors(void)
+{
+
+
+}// END OF FUNCTION
+
+
 
 
 //END OF FILE
