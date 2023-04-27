@@ -9,7 +9,7 @@
 * Written by    : Nathanaël Esnault
 * Verified by   : Nathanaël Esnault
 * Creation date : 2023-04-25
-* Version       : 1.0 (finished the 2023-04-25)
+* Version       : 1.1 (finished the 2023-04-25)
 * Modifications :
 * Known bugs    :
 *
@@ -69,8 +69,10 @@
 #define USB_BAUDRATE 230400
 #define SO_SKETCH_MESSAGE "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 #define EO_SETUP_MESSAGE "-------------------------------------------------------"
-#define SERIAL_SEPARATOR "\t" 
+//#define SERIAL_SEPARATOR "\t" 
+#define SERIAL_SEPARATOR "," 
 #define SERIAL_SOM "$"
+#define SERIAL_EOM "*/"
 #define ADD_CRC // define if we should calculate and return a CRC of the message to the PC
 #define NO_DATA "---"
 
@@ -535,13 +537,16 @@ t_start = currentTime_MS;
       Serial.print(SERIAL_SEPARATOR);
   }
 
-  Serial.print("*"); // To indicate the CRC is going to follow
+  
 
 #ifdef ADD_CRC
+  Serial.print("*"); // To indicate the CRC is going to follow
   Serial.print("32"); // Placeholder for the CRC
 #endif
 
-  Serial.println();  
+
+
+  Serial.println(SERIAL_EOM);  
 }// END OF FUNCTION
 
 
