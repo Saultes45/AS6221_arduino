@@ -24,7 +24,6 @@
 * //"MovingAverageFloat.h"   https://github.com/pilotak/MovingAverageFloat
 * //#include "Statistic.h" from Rob Tillaart https://github.com/RobTillaart/Statistic
 * 
-* #include "statistics.h" https://github.com/bolderflight/statistics for windowed average and std dev
 *
 *
 * TODO
@@ -56,11 +55,11 @@
 // -------------------------- Includes --------------------------
 #include "SparkFun_AS6212_Qwiic.h" 
 #include "MovingAverageFloat.h" 
-#include "Statistic.h" // for std dev 
+//#include "Statistic.h" // for std dev 
 #include <Wire.h>
 //#include <RunningStats.h>
-#include "statistics.h"
-
+//#include "statistics.h"
+ #include <SoftFilters.h>
 
 
 
@@ -77,9 +76,9 @@
 #define NO_DATA "---"
 
 
-#define T_SENSOR_1_ADDRS 0x44
+#define T_SENSOR_1_ADDRS 0x48
 //#define T_SENSOR_2_ADDRS 0x45
-#define T_SENSOR_2_ADDRS 0x48
+#define T_SENSOR_2_ADDRS 0x44
 #define NBR_SENSORS 2 //Don't change that
 #define NBR_DISPLAY_FIELDS 5
 
@@ -114,6 +113,7 @@ void i2cQuickScan(void);
 void sendDataSerial(float raw_1, float raw_2);
 void prepareHWTimerInterrupt(void);
 void checkSensors(void);
+void wakeupSensors(void);
 
 // -------------------------- Global variables  --------------------------
 AS6212 sensor1;
@@ -132,8 +132,27 @@ uint8_t globalTrendSensor1  = T_UNDEF;
 */
 
 
-bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_1; //for rolling mean + stddev
-bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_2; //for rolling mean + stddev
+//bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_1; //for rolling mean + stddev
+//bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_2; //for rolling mean + stddev
+
+ MovingAverageFilter<double, double> movAvg_1(NBR_SAMPLES_MOVSTATS);
+double avg_1;
+
+MovingVarianceFilter<double, double> movVar_1(NBR_SAMPLES_MOVSTATS);
+double var_1;
+ 
+ DifferentialFilter<double> diffFilter_1;
+Reading<Differential<double> > diff_1;
+
+
+ MovingAverageFilter<double, double> movAvg_2(NBR_SAMPLES_MOVSTATS);
+double avg_2;
+
+MovingVarianceFilter<double, double> movVar_2(NBR_SAMPLES_MOVSTATS);
+double var_2;
+ 
+ DifferentialFilter<double> diffFilter_2;
+Reading<Differential<double> > diff_2;
 
 
 // since in running stats, the number of samples is private, we need our own variable for that
@@ -208,33 +227,6 @@ void setup()
   
 
 
-
-  if (isRespondingSensor2 == S_ALIVE)
-  {
-    // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
-    if (sensor2.getSleepMode() == true)
-    {
-      Serial.println("Sensor #2 was asleep, waking up now");
-      sensor2.sleepModeOff();
-      delay(150); // wait for it to wake up
-    }
-    sensor2.setDefaultSettings(); // return to default settings 
-    // in case they were set differenctly by a previous example
-
-    sensor2.setTHighC(32); // set high threshhold
-    sensor2.setTLowC(23); // set low threshhold
-
-    Serial.print("\tThighF: ");
-    Serial.print(sensor2.getTHighF(), 2);
-    Serial.print("\tTlowF: ");
-    Serial.println(sensor2.getTLowF(), 2); // no getTLowC function
-  }
-
-
-
-
-
-
   sensor1.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
   sensor2.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
 
@@ -250,6 +242,8 @@ void setup()
 t_start = millis();
 
   Serial.println(EO_SETUP_MESSAGE);
+
+  prepareHWTimerInterrupt();
 
   sei();//allow interrupts
   
@@ -285,15 +279,8 @@ if (readSensor == 1) // if the ISR flag is set then new teperature readings are 
 //    statsSensor1.add(filter_1.get()*1000); // in  mC
 //    statsSensor2.add(filter_2.get()*1000); // in mC
 
-rollingStatsSensor_1.Update(sensorRawValue1);
-  Serial.print(rollingStatsSensor_1.mean());
-    Serial.print("\t");
-    Serial.print(rollingStatsSensor_1.var());
-    Serial.print("\t");
-    Serial.println(rollingStatsSensor_1.std());
 
-
-  //derivative
+  //derivative TODO: UPDATE in data
   diffSensor1_mC = (filter_1.get() - oldSensor1) * 1000; // conversion from C to mC
   diffSensor2_mC = (filter_2.get() - oldSensor2) * 1000; // conversion from C to mC
 
@@ -450,14 +437,43 @@ t_start = currentTime_MS;
     Serial.print(SERIAL_SEPARATOR);  
     Serial.print(raw_1, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
-    Serial.print(filter_1.get(), NBR_FLOAT_DISPLAY);
-    Serial.print(SERIAL_SEPARATOR);
+//    Serial.print(rollingStatsSensor_1.mean(), NBR_FLOAT_DISPLAY);
+//    Serial.print(SERIAL_SEPARATOR);
     Serial.print(diffSensor1_mC, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
     Serial.print(globalTrendSensor1, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
-    Serial.print(statsSensor1.variance(), NBR_FLOAT_DISPLAY);
-    Serial.print(SERIAL_SEPARATOR);
+
+
+ if (movVar_1.push(&raw_1, &var_1)) 
+ {
+    Serial.print(var_1, NBR_FLOAT_DISPLAY);
+  }
+  else
+  {
+    Serial.print(NO_DATA);
+  }
+  Serial.print(SERIAL_SEPARATOR);
+  
+    if (movAvg_1.push(&raw_1, &avg_1)) 
+    {
+    Serial.print(avg_1, NBR_FLOAT_DISPLAY);
+    
+  }
+    else
+  {
+    Serial.print(NO_DATA);
+  }
+Serial.print(SERIAL_SEPARATOR);
+  
+  if (diffFilter_1.push(&avg_1, &diff_1)) {
+    Serial.print(diff_1.value.speed, NBR_FLOAT_DISPLAY);
+  }
+    else
+  {
+    Serial.print(NO_DATA);
+  }
+Serial.print(SERIAL_SEPARATOR);
     
   }
   else
@@ -486,13 +502,40 @@ t_start = currentTime_MS;
     Serial.print(SERIAL_SEPARATOR);
     Serial.print(raw_2, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
-    Serial.print(filter_2.get(), NBR_FLOAT_DISPLAY);
-    Serial.print(SERIAL_SEPARATOR);
+//    Serial.print(rollingStatsSensor_2.mean(), NBR_FLOAT_DISPLAY);
+//    Serial.print(SERIAL_SEPARATOR);
     Serial.print(diffSensor2_mC, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
     Serial.print(globalTrendSensor2, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
-    Serial.print(statsSensor2.variance(), NBR_FLOAT_DISPLAY);
+     if (movVar_2.push(&raw_2, &var_2)) 
+ {
+    Serial.print(var_2, NBR_FLOAT_DISPLAY);
+  }
+  else
+  {
+    Serial.print(NO_DATA);
+  }
+  Serial.print(SERIAL_SEPARATOR);
+  
+    if (movAvg_2.push(&raw_2, &avg_2)) 
+    {
+    Serial.print(avg_2, NBR_FLOAT_DISPLAY);
+    
+  }
+    else
+  {
+    Serial.print(NO_DATA);
+  }
+Serial.print(SERIAL_SEPARATOR);
+  
+  if (diffFilter_2.push(&avg_2, &diff_2)) {
+    Serial.print(diff_2.value.speed, NBR_FLOAT_DISPLAY);
+  }
+    else
+  {
+    Serial.print(NO_DATA);
+  }
     Serial.print(SERIAL_SEPARATOR);
     
   }
@@ -552,15 +595,33 @@ void checkSensors(void)
     Serial.println("AS6221 #1 failed to respond. Please check wiring and possibly the I2C address.");
     isRespondingSensor1 = S_MIA;   
   }
+  else
+  {
+    Serial.println("AS6221 #1 is online!");
+  }
   if (sensor2.begin(T_SENSOR_2_ADDRS) == false)
   {
     Serial.println("AS6221 #2 failed to respond. Please check wiring and possibly the I2C address."); 
     isRespondingSensor2 = S_MIA;  
   }
+   else
+  {
+    Serial.println("AS6221 #2 is online!");
+  }
 
 
 
 
+}// END OF FUNCTION
+
+
+
+//-------------------------------------------------
+void wakeupSensors(void)
+{
+
+
+// SENSOR #1
   if (isRespondingSensor1 == S_ALIVE)
   {
     // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
@@ -583,13 +644,33 @@ void checkSensors(void)
     Serial.println(sensor1.getTLowF(), 2); // no getTLowC function
   }
 
-}// END OF FUNCTION
 
 
 
-//-------------------------------------------------
-void wakeupSensors(void)
-{
+
+
+// SENSOR #2
+  if (isRespondingSensor2 == S_ALIVE)
+  {
+    // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
+    if (sensor2.getSleepMode() == true)
+    {
+      Serial.println("Sensor #2 was asleep, waking up now");
+      sensor2.sleepModeOff();
+      delay(150); // wait for it to wake up
+    }
+    sensor2.setDefaultSettings(); // return to default settings 
+    // in case they were set differenctly by a previous example
+
+    sensor2.setTHighC(32); // set high threshhold
+    sensor2.setTLowC(23); // set low threshhold
+
+    Serial.print("\tThighF: ");
+    Serial.print(sensor2.getTHighF(), 2);
+    Serial.print("\tTlowF: ");
+    Serial.println(sensor2.getTLowF(), 2); // no getTLowC function
+  }
+  
 
 
 }// END OF FUNCTION
