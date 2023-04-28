@@ -216,7 +216,7 @@ void setup()
 
   pinMode(13, OUTPUT);
 
-//  cli();//stop interrupts
+  cli();//stop interrupts
 
   Wire.begin();
 
