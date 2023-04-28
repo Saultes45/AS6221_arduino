@@ -1,0 +1,28 @@
+{
+    "frameEnd": "*/",
+    "frameStart": "$",
+    "groups": [
+        {
+            "datasets": [
+                {
+                    "alarm": 35,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 35,
+                    "min": 18,
+                    "title": "New dataset",
+                    "units": "",
+                    "value": "%1",
+                    "widget": ""
+                }
+            ],
+            "title": "Raw Temperature",
+            "widget": ""
+        }
+    ],
+    "separator": ",",
+    "title": "As6221_dual"
+}
