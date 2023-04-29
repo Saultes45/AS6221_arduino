@@ -27,15 +27,13 @@
 *
 *
 * TODO
+* ----
 * Use structure instead of single global variables <---------------
-* 
+* Array of struct for modular nbr sensors (complex)
 * CRC checksum, need to have a message as a str->char array
 * 
-* 
-* 
-* 
-* 
-* 
+* Done
+* -----
 * Check sensor are replying, use "---" otherwise -- done
 * for flag variables, use some #def for states -- done
 * Change datarate: CR -- done
@@ -45,9 +43,10 @@
 * STDDEV -- done
 * Change separator for seial studio -- done
 *
+* Potential
+* ---------
 * Swap arduino for ESP32C3
-* 
-* Schnmitt trigger rise low temp
+* Schnmitt trigger for temp changes
 * Try alert mode
 * 
 * ========================================
@@ -55,116 +54,14 @@
 
 
 // -------------------------- Includes --------------------------
-// From library manager
-#include "SparkFun_AS6212_Qwiic.h" 
-#include "MovingAverageFloat.h" 
-#include <Wire.h>
-#include <SoftFilters.h>
+
 
 //Personal ones
-#include "FrameDefenition.h"
+#include "General.h"
 
 
-//#include "Statistic.h" // for std dev 
-//#include <RunningStats.h>
-//#include "statistics.h"
-
-// -------------------------- Define  --------------------------
-
-#define USB_BAUDRATE 230400
-#define SO_SKETCH_MESSAGE "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-#define EO_SETUP_MESSAGE "-------------------------------------------------------"
-
-//#define T_SENSOR_1_ADDRS 0x48
-#define T_SENSOR_1_ADDRS 0x45
-#define T_SENSOR_2_ADDRS 0x44
-#define NBR_SENSORS 2 //Don't change that
-
-#define NBR_SAMPLES_MOVSTATS    20
 
 
-#define TOLERANCE_MC_PER_S 7.0 // in milli deg C/s, defines when we consider the temperature stable, increasing or decreasing
-
-#define T_STABLE    0
-#define T_DECREASE  1
-#define T_INCREASE  2
-#define T_UNDEF     99
-
-#define S_ALIVE   1
-#define S_MIA     2
-
-
-// -------------------------- Struct (global) --------------------------
-struct temperatureSensorData
-{
-  float  currRawTemperature             = 0.0;
-  float diffFilteredTemperature         = 0.0;
-  float  prevFilteredTemperature        = 0.0;
-  uint8_t isResponding                  = S_ALIVE;
-  uint8_t trendFilteredTemperature      = T_UNDEF;
-};
-
-
-/* to put in the struct [11]
- *  T_SENSOR_2_ADDRS
-*  AS6212 sensor1;
-*  uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
-*  current value
-MovingAverageFilter<double, double> movAvg_1(NBR_SAMPLES_MOVSTATS);
-double avg_1;
-MovingVarianceFilter<double, double> movVar_1(NBR_SAMPLES_MOVSTATS);
-double var_1;
-float diffSensor1_mC = 0.0; // differerence between 2 iterations in milliC
-float oldSensor1 = 0.0;
-uint8_t globalTrendSensor1  = T_UNDEF;
-*/
-
-// -------------------------- Function declaration  --------------------------
-void i2cQuickScan                   (void);
-void sendDataSerial                 (float raw_1, float raw_2);
-void prepareHWTimerInterrupt        (void);
-void checkSensors                   (void);
-void wakeupSensors                  (void);
-void setUpUART                      (void);
-void setUpPins                      (void);
-
-// -------------------------- Global variables  --------------------------
-AS6212 sensor1;
-AS6212 sensor2;
-
-MovingAverageFilter<double, double> movAvg_1(NBR_SAMPLES_MOVSTATS);
-double avg_1;
-
-MovingVarianceFilter<double, double> movVar_1(NBR_SAMPLES_MOVSTATS);
-double var_1;
-
-MovingAverageFilter<double, double> movAvg_2(NBR_SAMPLES_MOVSTATS);
-double avg_2;
-
-MovingVarianceFilter<double, double> movVar_2(NBR_SAMPLES_MOVSTATS);
-double var_2;
-
-//ISR variables
-boolean toggleLED = 0;
-volatile boolean readSensor = 0;
-
-uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
-uint8_t isRespondingSensor2 = S_ALIVE;
-
-float diffSensor1_mC = 0.0; // differerence between 2 iterations in milliC
-float diffSensor2_mC = 0.0; // differerence between 2 iterations in milliC
-
-float oldSensor1 = 0.0;
-float oldSensor2 = 0.0;
-
-uint8_t globalTrendSensor1  = T_UNDEF; // 0 = sensed temperature (after moving average) is stable, 1 = decrease, 2 = increase
-uint8_t globalTrendSensor2  = T_UNDEF;
-
-// global structures
-//temperatureSensorData dataS1;
-//temperatureSensorData dataS2;
-
-long int t_start = millis();
 
 // -------------------------- ISR functions  --------------------------
 ISR(TIMER1_COMPA_vect)
@@ -174,11 +71,11 @@ ISR(TIMER1_COMPA_vect)
   readSensor = 1; //set the flag to indicate the loop to do a sensor read
 
   if (toggleLED){
-    digitalWrite(13,HIGH);
+    digitalWrite(LED_BUILTIN,HIGH);
     toggleLED = 0;
   }
   else{
-    digitalWrite(13,LOW);
+    digitalWrite(LED_BUILTIN,LOW);
     toggleLED = 1;
   }
 }
@@ -194,18 +91,22 @@ void setup()
 
   setUpUART();
   setUpPins();
+
+
+  // Allocate sensor addresses
+    int cnt_sensors;
+    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors)
+    {
+      as6221Data[cnt_sensors].address = i2cAddresses[cnt_sensors];
+    }
+
+
+
+  
   //cli();//stop interrupts
   Wire.begin();
   i2cQuickScan();
   checkSensors();
-
-  sensor1.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
-  sensor2.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
-
-  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
-  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
-  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_1000MS); // 1Hz
-  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_4000MS); // 1 time every 4 seconds
 
   t_start = millis();
 
@@ -236,9 +137,28 @@ void loop()
     float sensorRawValue1 = sensor1.readTempC();
     float sensorRawValue2 = sensor2.readTempC();
 
+    int cnt_sensors;
+    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors)
+    {
+      as6221Data[cnt_sensors].rawCurrentTemperature = as6221Data[cnt_sensors].sensor.readTempC();
+    }
+
+
     // Step #2: calculations
     //-------------------------
 
+//    int cnt_sensors;
+//    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++i)
+//    {
+//      as6221Data[cnt_sensors].filteredPreviousTemperature
+//      as6221Data[cnt_sensors].filteredDifferenceTemperature_mC
+//      as6221Data[cnt_sensors].filteredPreviousTemperature
+//      as6221Data[cnt_sensors].filteredTrendTemperature
+//
+//      as6221Data[cnt_sensors].avg
+//      as6221Data[cnt_sensors].var
+//      
+//    }
 
 
     // Step #3: send to computer
@@ -255,10 +175,6 @@ void loop()
     //  delay(119);
   }
 } // END OF LOOP
-
-
-
-
 
 
 
@@ -312,7 +228,9 @@ void sendDataSerial(float raw_1, float raw_2)
 
   // Start of message
   Serial.print(SERIAL_SOM);
-//  Serial.print(SERIAL_SEPARATOR);
+  #ifdef PRINT_FOR_SERIAL_STUDIO
+  Serial.print(SERIAL_SEPARATOR);
+  #endif
 
   // indicate the time
   long int currentTime_MS = millis();
@@ -401,6 +319,11 @@ void sendDataSerial(float raw_1, float raw_2)
     }
   }
 
+
+#ifdef PRINT_FOR_SERIAL_STUDIO
+Serial.print("0"); // dummy for debug
+Serial.print(SERIAL_SEPARATOR); // dummy for debug
+#endif
 
   // Sensor #2 - 5 fields
   //----------------------
@@ -620,6 +543,24 @@ void wakeupSensors(void)
   }
 
 
+
+
+
+}// END OF FUNCTION
+
+
+
+//-------------------------------------------------
+void setSensorsRate (void)
+{
+  sensor1.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
+  sensor2.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
+
+  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
+  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
+  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_1000MS); // 1Hz
+  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_4000MS); // 1 time every 4 seconds
+  
 }// END OF FUNCTION
 
 
@@ -641,11 +582,14 @@ void setUpPins (void)
 {
 
   Serial.print("Setting up pins...");
-  pinMode(13, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
   Serial.println("done!");
 
   
 }// END OF FUNCTION
+
+
+
 
 
 //END OF FILE

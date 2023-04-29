@@ -5,6 +5,26 @@
         {
             "datasets": [
                 {
+                    "alarm": 210,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 210,
+                    "min": 190,
+                    "title": "Loop period",
+                    "units": "ms",
+                    "value": "%2",
+                    "widget": ""
+                }
+            ],
+            "title": "Timing",
+            "widget": ""
+        },
+        {
+            "datasets": [
+                {
                     "alarm": 35,
                     "fft": false,
                     "fftSamples": 1024,
@@ -15,7 +35,7 @@
                     "min": 18,
                     "title": "Raw temperature",
                     "units": "°C",
-                    "value": "%3",
+                    "value": "%4",
                     "widget": ""
                 },
                 {
@@ -29,7 +49,7 @@
                     "min": 18,
                     "title": "Filtered temperature",
                     "units": "°C",
-                    "value": "%4",
+                    "value": "%5",
                     "widget": ""
                 },
                 {
@@ -43,7 +63,7 @@
                     "min": -200,
                     "title": "Filtered difference",
                     "units": "m°C",
-                    "value": "%5",
+                    "value": "%6",
                     "widget": ""
                 },
                 {
@@ -57,7 +77,7 @@
                     "min": -1,
                     "title": "Trend (filtered)",
                     "units": "N/A",
-                    "value": "%6",
+                    "value": "%7",
                     "widget": "bar"
                 },
                 {
@@ -71,7 +91,7 @@
                     "min": 0,
                     "title": "StdDev",
                     "units": "m°C",
-                    "value": "%7",
+                    "value": "%8",
                     "widget": ""
                 }
             ],
@@ -91,7 +111,7 @@
                     "min": 18,
                     "title": "Raw temperature",
                     "units": "°C",
-                    "value": "%9",
+                    "value": "%11",
                     "widget": ""
                 },
                 {
@@ -105,7 +125,7 @@
                     "min": 18,
                     "title": "Filtered temperature",
                     "units": "°C",
-                    "value": "%10",
+                    "value": "%12",
                     "widget": ""
                 },
                 {
@@ -119,7 +139,7 @@
                     "min": -200,
                     "title": "Filtered difference",
                     "units": "m°C",
-                    "value": "%11",
+                    "value": "%13",
                     "widget": ""
                 },
                 {
@@ -133,7 +153,7 @@
                     "min": -1,
                     "title": "Trend (filtered)",
                     "units": "N/A",
-                    "value": "%12",
+                    "value": "%14",
                     "widget": "bar"
                 },
                 {
@@ -147,31 +167,11 @@
                     "min": 0,
                     "title": "StdDev",
                     "units": "m°C",
-                    "value": "%13",
+                    "value": "%15",
                     "widget": ""
                 }
             ],
             "title": "Sensor #2",
-            "widget": ""
-        },
-        {
-            "datasets": [
-                {
-                    "alarm": 210,
-                    "fft": false,
-                    "fftSamples": 1024,
-                    "graph": false,
-                    "led": false,
-                    "log": false,
-                    "max": 210,
-                    "min": 190,
-                    "title": "Loop period",
-                    "units": "ms",
-                    "value": "%2",
-                    "widget": ""
-                }
-            ],
-            "title": "Timing",
             "widget": ""
         }
     ],
