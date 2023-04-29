@@ -30,7 +30,7 @@
 * Use structure instead of single global variables <---------------
 * 
 * CRC checksum, need to have a message as a str->char array
-* Change separator for seial studio
+* 
 * 
 * 
 * 
@@ -41,10 +41,12 @@
 * Change datarate: CR -- done
 * Swap delay for HW timer ISR --- done
 * Moving average + increase/decrease -- done
+* Put operations in functions -- done
 * STDDEV -- done
+* Change separator for seial studio -- done
 *
 * Swap arduino for ESP32C3
-* Put operations in functions
+* 
 * Schnmitt trigger rise low temp
 * Try alert mode
 * 
@@ -53,55 +55,36 @@
 
 
 // -------------------------- Includes --------------------------
+// From library manager
 #include "SparkFun_AS6212_Qwiic.h" 
 #include "MovingAverageFloat.h" 
-//#include "Statistic.h" // for std dev 
 #include <Wire.h>
-//#include <RunningStats.h>
-//#include "statistics.h"
 #include <SoftFilters.h>
 
+//Personal ones
+#include "FrameDefenition.h"
 
 
+//#include "Statistic.h" // for std dev 
+//#include <RunningStats.h>
+//#include "statistics.h"
 
 // -------------------------- Define  --------------------------
-
-
-//#define PRINT_FOR_HUMANS
-#define PRINT_FOR_SERIAL_STUDIO
-
-#ifdef PRINT_FOR_HUMANS
-#define SERIAL_SEPARATOR "\t" 
-#define SERIAL_SOM ""
-#define SERIAL_EOM ""
-#else
-#define SERIAL_SEPARATOR "\t" 
-#define SERIAL_SOM "$"
-#define SERIAL_EOM "*/"
-#endif
-
 
 #define USB_BAUDRATE 230400
 #define SO_SKETCH_MESSAGE "++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 #define EO_SETUP_MESSAGE "-------------------------------------------------------"
 
-#define ADD_CRC // define if we should calculate and return a CRC of the message to the PC
-#define NO_DATA "---"
-
-
 //#define T_SENSOR_1_ADDRS 0x48
 #define T_SENSOR_1_ADDRS 0x45
 #define T_SENSOR_2_ADDRS 0x44
 #define NBR_SENSORS 2 //Don't change that
-#define NBR_DISPLAY_FIELDS 5
 
+#define NBR_SAMPLES_MOVSTATS    20
 
-#define NBR_SAMPLES_MOVAV   5 // OLD
-#define NBR_SAMPLES_STD     20 // OLD
-#define NBR_SAMPLES_MOVSTATS   20
-#define NBR_FLOAT_DISPLAY   6
 
 #define TOLERANCE_MC_PER_S 7.0 // in milli deg C/s, defines when we consider the temperature stable, increasing or decreasing
+
 #define T_STABLE    0
 #define T_DECREASE  1
 #define T_INCREASE  2
@@ -121,30 +104,33 @@ struct temperatureSensorData
   uint8_t trendFilteredTemperature      = T_UNDEF;
 };
 
-// -------------------------- Function declaration  --------------------------
-void i2cQuickScan(void);
-void sendDataSerial(float raw_1, float raw_2);
-void prepareHWTimerInterrupt(void);
-void checkSensors(void);
-void wakeupSensors(void);
-
-// -------------------------- Global variables  --------------------------
-AS6212 sensor1;
-AS6212 sensor2;
-
-//Statistic statsSensor1; //for stddev
-//Statistic statsSensor2;
 
 /* to put in the struct [6]
  *  T_SENSOR_2_ADDRS
 *  AS6212 sensor1;
-bfs::MovingWindowStats<float, NBR_SAMPLES_MOVSTATS> rollingStatsSensor_1;
-uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
+*  uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
+*  current value
+MovingAverageFilter<double, double> movAvg_1(NBR_SAMPLES_MOVSTATS);
+double avg_1;
+MovingVarianceFilter<double, double> movVar_1(NBR_SAMPLES_MOVSTATS);
+double var_1;
 float diffSensor1_mC = 0.0; // differerence between 2 iterations in milliC
 float oldSensor1 = 0.0;
 uint8_t globalTrendSensor1  = T_UNDEF;
 */
 
+// -------------------------- Function declaration  --------------------------
+void i2cQuickScan                   (void);
+void sendDataSerial                 (float raw_1, float raw_2);
+void prepareHWTimerInterrupt        (void);
+void checkSensors                   (void);
+void wakeupSensors                  (void);
+void setUpUART                      (void);
+void setUpPins                      (void);
+
+// -------------------------- Global variables  --------------------------
+AS6212 sensor1;
+AS6212 sensor2;
 
 MovingAverageFilter<double, double> movAvg_1(NBR_SAMPLES_MOVSTATS);
 double avg_1;
@@ -161,10 +147,6 @@ double var_2;
 //ISR variables
 boolean toggleLED = 0;
 volatile boolean readSensor = 0;
-
-// Buffer will be 16 samples long, it will take 16 * sizeof(float) = 64 bytes of RAM
-MovingAverageFloat <NBR_SAMPLES_MOVAV> filter_1; // TO BE REPLACED
-MovingAverageFloat <NBR_SAMPLES_MOVAV> filter_2;
 
 uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
 uint8_t isRespondingSensor2 = S_ALIVE;
@@ -210,23 +192,12 @@ void setup()
 {
 
 
-
-  Serial.begin(USB_BAUDRATE);
-  Serial.println(SO_SKETCH_MESSAGE);
-  Serial.println("Dual AS6221 - Basic Readings");
-
-  pinMode(13, OUTPUT);
-
+  setUpUART();
+  setUpPins();
   //cli();//stop interrupts
-
   Wire.begin();
-
   i2cQuickScan();
-
-
   checkSensors();
-
-
 
   sensor1.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
   sensor2.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
@@ -234,11 +205,7 @@ void setup()
   // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
   // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
   // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_1000MS); // 1Hz
-  //  sensor2.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_4000MS); // 1 time every 4 seconds
-
-
-
-
+  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_4000MS); // 1 time every 4 seconds
 
   t_start = millis();
 
@@ -653,10 +620,32 @@ void wakeupSensors(void)
   }
 
 
-
 }// END OF FUNCTION
 
 
 
+//-------------------------------------------------
+void setUpUART (void)
+{
 
-//END OF FI
+  Serial.begin(USB_BAUDRATE);
+  Serial.println(SO_SKETCH_MESSAGE);
+  Serial.println("Dual AS6221 - Basic Readings");
+  
+}// END OF FUNCTION
+
+
+
+//-------------------------------------------------
+void setUpPins (void)
+{
+
+  Serial.print("Setting up pins...");
+  pinMode(13, OUTPUT);
+  Serial.println("done!");
+
+  
+}// END OF FUNCTION
+
+
+//END OF FILE
