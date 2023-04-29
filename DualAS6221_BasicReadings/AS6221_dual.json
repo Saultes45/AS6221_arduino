@@ -27,7 +27,7 @@
                     "log": false,
                     "max": 35,
                     "min": 18,
-                    "title": "Filtered Temperature",
+                    "title": "Filtered temperature",
                     "units": "°C",
                     "value": "%4",
                     "widget": ""
@@ -81,24 +81,100 @@
         {
             "datasets": [
                 {
-                    "alarm": 34,
+                    "alarm": 35,
                     "fft": false,
                     "fftSamples": 1024,
                     "graph": true,
                     "led": false,
                     "log": false,
-                    "max": 34,
+                    "max": 35,
                     "min": 18,
                     "title": "Raw temperature",
                     "units": "°C",
                     "value": "%9",
                     "widget": ""
+                },
+                {
+                    "alarm": 35,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 35,
+                    "min": 18,
+                    "title": "Filtered temperature",
+                    "units": "°C",
+                    "value": "%10",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 200,
+                    "min": -200,
+                    "title": "Filtered difference",
+                    "units": "m°C",
+                    "value": "%11",
+                    "widget": ""
+                },
+                {
+                    "alarm": 3,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 3,
+                    "min": -1,
+                    "title": "Trend (filtered)",
+                    "units": "N/A",
+                    "value": "%12",
+                    "widget": "bar"
+                },
+                {
+                    "alarm": 500,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 950,
+                    "min": 0,
+                    "title": "StdDev",
+                    "units": "m°C",
+                    "value": "%13",
+                    "widget": ""
                 }
             ],
             "title": "Sensor #2",
             "widget": ""
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 210,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 210,
+                    "min": 190,
+                    "title": "Loop period",
+                    "units": "ms",
+                    "value": "%2",
+                    "widget": ""
+                }
+            ],
+            "title": "Timing",
+            "widget": ""
         }
     ],
-    "separator": "\\t",
+    "separator": ",",
     "title": "As6221_dual"
 }
