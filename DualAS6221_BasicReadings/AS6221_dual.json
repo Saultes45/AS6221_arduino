@@ -13,16 +13,92 @@
                     "log": false,
                     "max": 35,
                     "min": 18,
-                    "title": "New dataset",
-                    "units": "",
-                    "value": "%1",
+                    "title": "Raw temperature",
+                    "units": "°C",
+                    "value": "%3",
+                    "widget": ""
+                },
+                {
+                    "alarm": 35,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 35,
+                    "min": 18,
+                    "title": "Filtered Temperature",
+                    "units": "°C",
+                    "value": "%4",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 200,
+                    "min": -200,
+                    "title": "Filtered difference",
+                    "units": "m°C",
+                    "value": "%5",
+                    "widget": ""
+                },
+                {
+                    "alarm": 3,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 3,
+                    "min": -1,
+                    "title": "Trend (filtered)",
+                    "units": "N/A",
+                    "value": "%6",
+                    "widget": "bar"
+                },
+                {
+                    "alarm": 500,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 950,
+                    "min": 0,
+                    "title": "StdDev",
+                    "units": "m°C",
+                    "value": "%7",
                     "widget": ""
                 }
             ],
-            "title": "Raw Temperature",
+            "title": "Sensor #1",
+            "widget": ""
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 34,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": true,
+                    "led": false,
+                    "log": false,
+                    "max": 34,
+                    "min": 18,
+                    "title": "Raw temperature",
+                    "units": "°C",
+                    "value": "%9",
+                    "widget": ""
+                }
+            ],
+            "title": "Sensor #2",
             "widget": ""
         }
     ],
-    "separator": ",",
+    "separator": "\\t",
     "title": "As6221_dual"
 }
