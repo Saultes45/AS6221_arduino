@@ -105,7 +105,7 @@ struct temperatureSensorData
 };
 
 
-/* to put in the struct [6]
+/* to put in the struct [11]
  *  T_SENSOR_2_ADDRS
 *  AS6212 sensor1;
 *  uint8_t isRespondingSensor1 = S_ALIVE; // 0 = can't establish connection with sensor, 1 = connection ok
