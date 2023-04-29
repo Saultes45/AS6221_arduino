@@ -37,7 +37,7 @@
 #define ADD_CRC // define if we should calculate and return a CRC of the message to the PC
 #define NO_DATA "---"
 #else
-#define SERIAL_SEPARATOR "\t" 
+#define SERIAL_SEPARATOR "," 
 #define SERIAL_SOM "$"
 #define SERIAL_EOM "*/"
 #define NBR_FLOAT_DISPLAY   6
