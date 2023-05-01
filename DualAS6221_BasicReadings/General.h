@@ -66,13 +66,21 @@ uint8_t globalTrendSensor2  = T_UNDEF;
 
 // -------------------------- Function declaration  --------------------------
 void i2cQuickScan                   (void);
-void sendDataSerial                 (float raw_1, float raw_2);
+//void sendDataSerial                 (float raw_1, float raw_2);
+void sendDataSerial                 (void);
 void prepareHWTimerInterrupt        (void);
 void checkSensors                   (void);
 void wakeupSensors                  (void);
 void setUpUART                      (void);
 void setUpPins                      (void);
 void setSensorsRate                 (void);
+void printI2CAddress                (byte addressToDisplay);
+void allocateSensorAddress          (void);
+void setUpSensors                   (void);
+void collectSensorValues            (void);
+void updatePrevValues               (void);
+
+
 
 
 
