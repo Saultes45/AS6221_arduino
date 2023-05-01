@@ -50,6 +50,7 @@
 // Updated for every measurement
 #define MEAS_VALID      1
 #define MEAS_INVALID   0 
+#define MEAS_UNKNOWN   99
 
 
 // -------------------------- Define  --------------------------
@@ -70,14 +71,14 @@ struct temperatureSensorData
   uint8_t   filteredTrendTemperature          = T_UNDEF;
 
   //Results of filters
-  double avg;
-  double var;
+  float avg;
+  float var;
   
 };
 
 // After loooong hours of debuging on a Sat at 3 AM, you cannot put that in the struct 
-MovingAverageFilter<double, double> movAvg[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
-MovingVarianceFilter<double, double> movVar[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
+MovingAverageFilter<float, float> movAvg[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
 
 // global structures
 temperatureSensorData as6221Data[NBR_SENSORS];

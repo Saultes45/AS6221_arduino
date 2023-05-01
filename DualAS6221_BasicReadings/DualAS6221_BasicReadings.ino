@@ -29,9 +29,10 @@
 * TODO
 * ----
 * Use structure instead of single global variables <---------------
-* Array of struct for modular nbr sensors (complex) -- done
-* Put threshold values in #define
+* Add (+1: is valid to add) to UART stream
+* Put threshold values in #define (sanity check)
 * Deal with invalid measurements: what are the exclusion rules? What are the consequences?
+* Deal of when the averaging didn't work
 * 
 * Done
 * -----
@@ -43,6 +44,7 @@
 * Put operations in functions -- done
 * STDDEV -- done
 * Change separators for serial studio -- done
+* Array of struct for modular nbr sensors (complex) -- done
 *
 * Potential
 * ---------
@@ -251,7 +253,7 @@ void sendDataSerial(void)
    Serial.print(as6221Data[cnt_sensors].avg);
    Serial.print(SERIAL_SEPARATOR);
 
-    // field #4: difference new avaerage and old average
+    // field #4: difference new average and old average
     Serial.print(as6221Data[cnt_sensors].filteredDifferenceTemperature_mC, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
 
@@ -264,168 +266,168 @@ void sendDataSerial(void)
 
 
 
-  
-
-  // Sensor #1 - 5 fields
-  //----------------------
-
-
-  // S1 - field #1: I2C address
-  Serial.print("0x");
-  if (T_SENSOR_1_ADDRS<16)
-  { 
-    Serial.print("0");
-  }
-  Serial.print(T_SENSOR_1_ADDRS,HEX);
-  Serial.print(SERIAL_SEPARATOR); 
-
-  if (isRespondingSensor1 == S_ALIVE)
-  { 
-    // S1 - field #2: Raw temperature
-    Serial.print(raw_1, NBR_FLOAT_DISPLAY);
-    Serial.print(SERIAL_SEPARATOR);
-
-    // S1 - field #3: Moving average on temperature
-    if (movAvg_1.push(&raw_1, &avg_1)) 
-    {
-      Serial.print(avg_1, NBR_FLOAT_DISPLAY);
-    }
-    else
-    {
-      Serial.print(NO_DATA);
-    }
-    Serial.print(SERIAL_SEPARATOR);
-
-
-    // S1 - field #4: difference new avaerage and old average
-    diffSensor1_mC = (avg_1 - oldSensor1) * 1000; // conversion from C to mC
-    Serial.print(diffSensor1_mC, NBR_FLOAT_DISPLAY);
-    Serial.print(SERIAL_SEPARATOR);
-
-    // S1 - field #5: direction of the temperature difference
-    if (abs(diffSensor1_mC) < TOLERANCE_MC_PER_S)
-    {
-      // then we can consider the temperature is stable
-      globalTrendSensor1 = T_STABLE;
-    }
-    else // if the temperature difference (from movmean) is becoming bigger, check direction
-    {
-      if (diffSensor1_mC > 0.0) // increasing
-      {
-        globalTrendSensor1 = T_INCREASE;
-      }
-      else // decreasing
-      {
-        globalTrendSensor1 = T_DECREASE;
-      }
-    }
-    Serial.print(globalTrendSensor1);
-    Serial.print(SERIAL_SEPARATOR);
-    
-
-    // S1 - field #5: Moving standard deviation
-    if (movVar_1.push(&raw_1, &var_1)) 
-    {
-      Serial.print(var_1*1000, NBR_FLOAT_DISPLAY); // conversion from C to mC
-    }
-    else
-    {
-      Serial.print(NO_DATA);
-    }
-    Serial.print(SERIAL_SEPARATOR);
-    
-  }
-  else
-  {
-    for (int i=0; i<NBR_DISPLAY_FIELDS; i++)
-    {   
-      Serial.print(NO_DATA);
-      Serial.print(SERIAL_SEPARATOR);
-    }
-  }
-
-
-#ifdef PRINT_FOR_SERIAL_STUDIO
-Serial.print("0"); // dummy for debug
-Serial.print(SERIAL_SEPARATOR); // dummy for debug
-#endif
-
-  // Sensor #2 - 5 fields
-  //----------------------
-
-    // S2 - field #1: I2C address
-  Serial.print("0x");
-  if (T_SENSOR_2_ADDRS<16)
-  { 
-    Serial.print("0");
-  }
-  Serial.print(T_SENSOR_2_ADDRS,HEX);
-  Serial.print(SERIAL_SEPARATOR); 
-
-  if (isRespondingSensor2 == S_ALIVE)
-  { 
-    // S2 - field #2: Raw temperature
-    Serial.print(raw_2, NBR_FLOAT_DISPLAY);
-    Serial.print(SERIAL_SEPARATOR);
-
-    // S2 - field #3: Moving average on temperature
-    if (movAvg_2.push(&raw_2, &avg_2)) 
-    {
-      Serial.print(avg_2, NBR_FLOAT_DISPLAY);
-    }
-    else
-    {
-      Serial.print(NO_DATA);
-    }
-    Serial.print(SERIAL_SEPARATOR);
-
-
-    // S2 - field #4: difference new avaerage and old average
-    diffSensor2_mC = (avg_2 - oldSensor2) * 1000; // conversion from C to mC
-    Serial.print(diffSensor2_mC, NBR_FLOAT_DISPLAY);
-    Serial.print(SERIAL_SEPARATOR);
-
-    // S1 - field #5: direction of the temperature difference
-    if (abs(diffSensor2_mC) < TOLERANCE_MC_PER_S)
-    {
-      // then we can consider the temperature is stable
-      globalTrendSensor2 = T_STABLE;
-    }
-    else // if the temperature difference (from movmean) is becoming bigger, check direction
-    {
-      if (diffSensor2_mC > 0.0) // increasing
-      {
-        globalTrendSensor2 = T_INCREASE;
-      }
-      else // decreasing
-      {
-        globalTrendSensor2 = T_DECREASE;
-      }
-    }
-    Serial.print(globalTrendSensor2);
-    Serial.print(SERIAL_SEPARATOR);
-    
-
-    // S1 - field #5: Moving standard deviation
-    if (movVar_2.push(&raw_2, &var_2)) 
-    {
-      Serial.print(var_2*1000, NBR_FLOAT_DISPLAY); // conversion from C to mC
-    }
-    else
-    {
-      Serial.print(NO_DATA);
-    }
-    Serial.print(SERIAL_SEPARATOR);
-    
-  }
-  else
-  {
-    for (int i=0; i<NBR_DISPLAY_FIELDS; i++)
-    {   
-      Serial.print(NO_DATA);
-      Serial.print(SERIAL_SEPARATOR);
-    }
-  }
+//  
+//
+//  // Sensor #1 - 5 fields
+//  //----------------------
+//
+//
+//  // S1 - field #1: I2C address
+//  Serial.print("0x");
+//  if (T_SENSOR_1_ADDRS<16)
+//  { 
+//    Serial.print("0");
+//  }
+//  Serial.print(T_SENSOR_1_ADDRS,HEX);
+//  Serial.print(SERIAL_SEPARATOR); 
+//
+//  if (isRespondingSensor1 == S_ALIVE)
+//  { 
+//    // S1 - field #2: Raw temperature
+//    Serial.print(raw_1, NBR_FLOAT_DISPLAY);
+//    Serial.print(SERIAL_SEPARATOR);
+//
+//    // S1 - field #3: Moving average on temperature
+//    if (movAvg_1.push(&raw_1, &avg_1)) 
+//    {
+//      Serial.print(avg_1, NBR_FLOAT_DISPLAY);
+//    }
+//    else
+//    {
+//      Serial.print(NO_DATA);
+//    }
+//    Serial.print(SERIAL_SEPARATOR);
+//
+//
+//    // S1 - field #4: difference new avaerage and old average
+//    diffSensor1_mC = (avg_1 - oldSensor1) * 1000; // conversion from C to mC
+//    Serial.print(diffSensor1_mC, NBR_FLOAT_DISPLAY);
+//    Serial.print(SERIAL_SEPARATOR);
+//
+//    // S1 - field #5: direction of the temperature difference
+//    if (abs(diffSensor1_mC) < TOLERANCE_MC_PER_S)
+//    {
+//      // then we can consider the temperature is stable
+//      globalTrendSensor1 = T_STABLE;
+//    }
+//    else // if the temperature difference (from movmean) is becoming bigger, check direction
+//    {
+//      if (diffSensor1_mC > 0.0) // increasing
+//      {
+//        globalTrendSensor1 = T_INCREASE;
+//      }
+//      else // decreasing
+//      {
+//        globalTrendSensor1 = T_DECREASE;
+//      }
+//    }
+//    Serial.print(globalTrendSensor1);
+//    Serial.print(SERIAL_SEPARATOR);
+//    
+//
+//    // S1 - field #5: Moving standard deviation
+//    if (movVar_1.push(&raw_1, &var_1)) 
+//    {
+//      Serial.print(var_1*1000, NBR_FLOAT_DISPLAY); // conversion from C to mC
+//    }
+//    else
+//    {
+//      Serial.print(NO_DATA);
+//    }
+//    Serial.print(SERIAL_SEPARATOR);
+//    
+//  }
+//  else
+//  {
+//    for (int i=0; i<NBR_DISPLAY_FIELDS; i++)
+//    {   
+//      Serial.print(NO_DATA);
+//      Serial.print(SERIAL_SEPARATOR);
+//    }
+//  }
+//
+//
+//#ifdef PRINT_FOR_SERIAL_STUDIO
+//Serial.print("0"); // dummy for debug
+//Serial.print(SERIAL_SEPARATOR); // dummy for debug
+//#endif
+//
+//  // Sensor #2 - 5 fields
+//  //----------------------
+//
+//    // S2 - field #1: I2C address
+//  Serial.print("0x");
+//  if (T_SENSOR_2_ADDRS<16)
+//  { 
+//    Serial.print("0");
+//  }
+//  Serial.print(T_SENSOR_2_ADDRS,HEX);
+//  Serial.print(SERIAL_SEPARATOR); 
+//
+//  if (isRespondingSensor2 == S_ALIVE)
+//  { 
+//    // S2 - field #2: Raw temperature
+//    Serial.print(raw_2, NBR_FLOAT_DISPLAY);
+//    Serial.print(SERIAL_SEPARATOR);
+//
+//    // S2 - field #3: Moving average on temperature
+//    if (movAvg_2.push(&raw_2, &avg_2)) 
+//    {
+//      Serial.print(avg_2, NBR_FLOAT_DISPLAY);
+//    }
+//    else
+//    {
+//      Serial.print(NO_DATA);
+//    }
+//    Serial.print(SERIAL_SEPARATOR);
+//
+//
+//    // S2 - field #4: difference new avaerage and old average
+//    diffSensor2_mC = (avg_2 - oldSensor2) * 1000; // conversion from C to mC
+//    Serial.print(diffSensor2_mC, NBR_FLOAT_DISPLAY);
+//    Serial.print(SERIAL_SEPARATOR);
+//
+//    // S1 - field #5: direction of the temperature difference
+//    if (abs(diffSensor2_mC) < TOLERANCE_MC_PER_S)
+//    {
+//      // then we can consider the temperature is stable
+//      globalTrendSensor2 = T_STABLE;
+//    }
+//    else // if the temperature difference (from movmean) is becoming bigger, check direction
+//    {
+//      if (diffSensor2_mC > 0.0) // increasing
+//      {
+//        globalTrendSensor2 = T_INCREASE;
+//      }
+//      else // decreasing
+//      {
+//        globalTrendSensor2 = T_DECREASE;
+//      }
+//    }
+//    Serial.print(globalTrendSensor2);
+//    Serial.print(SERIAL_SEPARATOR);
+//    
+//
+//    // S1 - field #5: Moving standard deviation
+//    if (movVar_2.push(&raw_2, &var_2)) 
+//    {
+//      Serial.print(var_2*1000, NBR_FLOAT_DISPLAY); // conversion from C to mC
+//    }
+//    else
+//    {
+//      Serial.print(NO_DATA);
+//    }
+//    Serial.print(SERIAL_SEPARATOR);
+//    
+//  }
+//  else
+//  {
+//    for (int i=0; i<NBR_DISPLAY_FIELDS; i++)
+//    {   
+//      Serial.print(NO_DATA);
+//      Serial.print(SERIAL_SEPARATOR);
+//    }
+//  }
 
 
 
@@ -441,8 +443,8 @@ Serial.print(SERIAL_SEPARATOR); // dummy for debug
 
   Serial.println(SERIAL_EOM); 
 
-  oldSensor1 = avg_1;
-  oldSensor2 = avg_2;
+//  oldSensor1 = avg_1;
+//  oldSensor2 = avg_2;
 
 
 }// END OF FUNCTION
@@ -754,7 +756,7 @@ void updatePrevValues(void)
     // Check if we were able to access it earlier via I2C AND the raw meas was valid
     if (as6221Data[cnt_sensors].isResponding == S_ALIVE && as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID) 
     {
-      as6221Data[cnt_sensors].filteredPreviousTemperature = movAvg[cnt_sensors];
+      movAvg[cnt_sensors].push(&as6221Data[cnt_sensors].rawCurrentTemperature, &as6221Data[cnt_sensors].filteredPreviousTemperature);
     }
   } // END OF SENSOR LOOP
 
@@ -775,22 +777,31 @@ void performCalculations(void)
 
     
     // Step 1: moving average
-    if (movAvg[cnt_sensors].push(&as6221Data[cnt_sensors].rawCurrentTemperature, &as6221Data[cnt_sensors].avg)) 
+    //-----------------------
+    float temp_1 = as6221Data[cnt_sensors].rawCurrentTemperature;
+    float temp_2 = as6221Data[cnt_sensors].avg;
+    if ( movAvg[cnt_sensors].push(&temp_1, &temp_2) ) 
     {
+      // Then SUCCESS
     }
     else
     {
-      //
+      // the averaging didn't work
     }
+
+
 
 
     // Step 2: moving var
-    if (movVar[cnt_sensors].push(&as6221Data[cnt_sensors].rawCurrentTemperature, &as6221Data[cnt_sensors].var)) 
+    //-----------------------
+    temp_2 = as6221Data[cnt_sensors].var;
+    if ( movAvg[cnt_sensors].push(&temp_1, &temp_2) ) 
     {
+      // Then SUCCESS
     }
     else
     {
-      //
+      // the variance calculation didn't work
     }
 
 
@@ -800,7 +811,24 @@ void performCalculations(void)
 
 
     // Step 4: trend
-    as6221Data[cnt_sensors].filteredTrendTemperature          = T_UNDEF;
+//    as6221Data[cnt_sensors].filteredTrendTemperature          = T_UNDEF;
+
+    if (abs(as6221Data[cnt_sensors].filteredDifferenceTemperature_mC) < TOLERANCE_MC_PER_S)
+    {
+      // then we can consider the temperature is stable
+      as6221Data[cnt_sensors].filteredTrendTemperature  = T_STABLE;
+    }
+    else // if the temperature difference (from movmean) is becoming bigger, check direction
+    {
+      if (as6221Data[cnt_sensors].filteredDifferenceTemperature_mC > 0.0) // increasing
+      {
+        as6221Data[cnt_sensors].filteredTrendTemperature = T_INCREASE;
+      }
+      else // decreasing
+      {
+        as6221Data[cnt_sensors].filteredTrendTemperature = T_DECREASE;
+      }
+    }
        
     }
   } // END OF SENSOR LOOP

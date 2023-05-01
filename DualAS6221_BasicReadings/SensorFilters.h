@@ -28,17 +28,17 @@
 #define NUM_SAMPLES_MOVSTATS 20
 
 
-MovingAverageFilter<double, double> movAvg_1(NUM_SAMPLES_MOVSTATS);
-double avg_1;
-
-MovingVarianceFilter<double, double> movVar_1(NUM_SAMPLES_MOVSTATS);
-double var_1;
-
-MovingAverageFilter<double, double> movAvg_2(NUM_SAMPLES_MOVSTATS);
-double avg_2;
-
-MovingVarianceFilter<double, double> movVar_2(NUM_SAMPLES_MOVSTATS);
-double var_2;
+//MovingAverageFilter<double, double> movAvg_1(NUM_SAMPLES_MOVSTATS);
+//double avg_1;
+//
+//MovingVarianceFilter<double, double> movVar_1(NUM_SAMPLES_MOVSTATS);
+//double var_1;
+//
+//MovingAverageFilter<double, double> movAvg_2(NUM_SAMPLES_MOVSTATS);
+//double avg_2;
+//
+//MovingVarianceFilter<double, double> movVar_2(NUM_SAMPLES_MOVSTATS);
+//double var_2;
 
 
 
