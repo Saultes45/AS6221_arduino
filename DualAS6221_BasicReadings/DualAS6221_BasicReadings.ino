@@ -9,7 +9,7 @@
 * Written by    : Nathanaël Esnault
 * Verified by   : Nathanaël Esnault
 * Creation date : 2023-04-25
-* Version       : 1.1 (finished the 2023-04-25)
+* Version       : 1.1 (finished the 2023-05-01)
 * Modifications :
 * Known bugs    :
 *
@@ -29,8 +29,8 @@
 * TODO
 * ----
 * Use structure instead of single global variables <---------------
-* Array of struct for modular nbr sensors (complex)
-* CRC checksum, need to have a message as a str->char array
+* Array of struct for modular nbr sensors (complex) -- done
+* Put threshold values in #define
 * 
 * Done
 * -----
@@ -48,6 +48,7 @@
 * Swap arduino for ESP32C3
 * Schnmitt trigger for temp changes
 * Try alert mode
+* CRC checksum, need to have a message as a str->char array
 * 
 * ========================================
 */
@@ -88,25 +89,11 @@ ISR(TIMER1_COMPA_vect)
 void setup()
 {
 
+//cli();//stop interrupts
 
   setUpUART();
   setUpPins();
-
-
-  // Allocate sensor addresses
-    int cnt_sensors;
-    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors)
-    {
-      as6221Data[cnt_sensors].address = i2cAddresses[cnt_sensors];
-    }
-
-
-
-  
-  //cli();//stop interrupts
-  Wire.begin();
-  i2cQuickScan();
-  checkSensors();
+  setUpSensors();
 
   t_start = millis();
 
@@ -129,14 +116,15 @@ void loop()
   if (readSensor == 1) // if the ISR flag is set then new teperature readings are ready 
   {
 
-    readSensor  = 0; //reste the ISR flag
+    readSensor  = 0; //reset the ISR flag
 
     // Step #1: get the values
     //----------------------------
 
-    float sensorRawValue1 = sensor1.readTempC();
-    float sensorRawValue2 = sensor2.readTempC();
+//    float sensorRawValue1 = sensor1.readTempC();
+//    float sensorRawValue2 = sensor2.readTempC();
 
+    collectSensorValues();
     int cnt_sensors;
     for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors)
     {
@@ -146,7 +134,7 @@ void loop()
 
     // Step #2: calculations
     //-------------------------
-
+    performCalculations();
 //    int cnt_sensors;
 //    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++i)
 //    {
@@ -164,13 +152,14 @@ void loop()
     // Step #3: send to computer
     //-------------------------
 
-    sendDataSerial(sensorRawValue1, sensorRawValue2);
-
+//    sendDataSerial(sensorRawValue1, sensorRawValue2);
+    sendDataSerial();
     
 
 
     // Step #4: prepare for next step
     //---------------------------------
+    updatePrevValues();
 
     //  delay(119);
   }
@@ -195,24 +184,21 @@ void i2cQuickScan(void)
 
     if (error == 0)
     {
-      Serial.print("I2C device found at address 0x");
-      if (address<16) 
-      Serial.print("0");
-      Serial.print(address,HEX);
-      Serial.println("  !");
+      Serial.print("I2C device found at address: ");
+      printI2CAddress (address);
+      Serial.println();
 
       nDevices++;
     }
     else if (error==4) 
     {
-      Serial.print("Unknown error at address 0x");
-      if (address<16) 
-      Serial.print("0");
-      Serial.println(address,HEX);
+      Serial.print("Unknown error at address: ");
+      printI2CAddress (address);
+      Serial.println();
     }    
   }
   if (nDevices == 0)
-  Serial.println("No I2C devices found");
+  Serial.println("No I2C devices found :(");
   else
   Serial.println("Scan done");
 } // END OF FUNCTION
@@ -221,7 +207,8 @@ void i2cQuickScan(void)
 
 
 //-------------------------------------------------
-void sendDataSerial(float raw_1, float raw_2)
+//void sendDataSerial(float raw_1, float raw_2)
+void sendDataSerial(void)
 {
 
   // Build the string + send via UART
@@ -449,39 +436,35 @@ void prepareHWTimerInterrupt(void)
 void checkSensors(void)
 {
 
-  // Check to see if AS6221 is present on the bus
-  // Note, here we are calling begin() with no arguments = defaults (address:0x48, I2C-port:Wire)
+  // Check to see if the AS6221 are present on the bus
+  // Calling begin() with no arguments = defaults (address:0x48, I2C-port:Wire)
 
 
+    int cnt_sensors;
+    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors)
+    {
+        // Display information about the current sensor
+        Serial.print("AS6221 #");
+        Serial.print(cnt_sensors+1);
+        Serial.print(" (");
+        printI2CAddress(as6221Data[cnt_sensors].address);
+        Serial.print("): ");
 
-  if (sensor1.begin(T_SENSOR_1_ADDRS) == false)
-  {
-    Serial.println("AS6221 #1 failed to respond. Please check wiring and possibly the I2C address.");
-    isRespondingSensor1 = S_MIA;   
-  }
-  else
-  {
-    Serial.println("AS6221 #1 is online!");
-  }
-
-
-
-
-
-
-
-  if (sensor2.begin(T_SENSOR_2_ADDRS) == false)
-  {
-    Serial.println("AS6221 #2 failed to respond. Please check wiring and possibly the I2C address."); 
-    isRespondingSensor2 = S_MIA;  
-  }
-  else
-  {
-    Serial.println("AS6221 #2 is online!");
-  }
-
-
-
+      if (as6221Data[cnt_sensors].sensor.begin(as6221Data[cnt_sensors].address) == false)
+      {
+        // If there is a communication error
+        Serial.println("failed to respond. Please check wiring and possibly the I2C address.");
+        
+        as6221Data[cnt_sensors].isResponding = S_MIA;   
+      }
+      else
+      {
+        // If no problems are detected
+        Serial.println(" is good to go.");
+        
+        as6221Data[cnt_sensors].isResponding = S_ALIVE;   
+      }
+    }// END OF SENSOR LOOP
 
 }// END OF FUNCTION
 
@@ -491,57 +474,100 @@ void checkSensors(void)
 void wakeupSensors(void)
 {
 
+    int cnt_sensors;
+for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors) {
 
-  // SENSOR #1
-  if (isRespondingSensor1 == S_ALIVE)
-  {
+  // Check if we were able to access it earlier via I2C
+  if (as6221Data[cnt_sensors].isResponding == S_ALIVE) {
+
+
+    //WAKE UP
+    //-------
     // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
-    if (sensor1.getSleepMode() == true)
+    if (as6221Data[cnt_sensors].sensor.getSleepMode() == true) 
     {
-      Serial.println("Sensor #1 was asleep, waking up now");
-      sensor1.sleepModeOff();
+      Serial.print("Sensor #");
+        Serial.print(cnt_sensors+1);
+        Serial.print(" (");
+        printI2CAddress(as6221Data[cnt_sensors].address);
+      Serial.print(") was asleep, waking up now...");
+      as6221Data[cnt_sensors].sensor.sleepModeOff();
       delay(150); // wait for it to wake up
-    }
+      Serial.println("done!");
+    } // END IF SLEEP
 
-    sensor1.setDefaultSettings(); // return to default settings 
+
+    //DEFAULT SETTINGS
+    //----------------
+    as6221Data[cnt_sensors].sensor.setDefaultSettings(); // return to default settings 
     // in case they were set differenctly by a previous example
 
-    sensor1.setTHighC(32); // set high threshhold
-    sensor1.setTLowC(23); // set low threshhold
+    //ALARM/THRESHOLD
+    //----------------
+    as6221Data[cnt_sensors].sensor.setTHighC(32); // set high threshhold
+    as6221Data[cnt_sensors].sensor.setTLowC(23); // set low threshhold
 
     Serial.print("\tThighF: ");
-    Serial.print(sensor1.getTHighF(), 2);
+    Serial.print(as6221Data[cnt_sensors].sensor.getTHighF(), 2);
     Serial.print("\tTlowF: ");
-    Serial.println(sensor1.getTLowF(), 2); // no getTLowC function
+    Serial.println(as6221Data[cnt_sensors].sensor.getTLowF(), 2); // no getTLowC function
+
   }
+}
 
 
 
-
-
-
-  // SENSOR #2
-  if (isRespondingSensor2 == S_ALIVE)
-  {
-    // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
-    if (sensor2.getSleepMode() == true)
-    {
-      Serial.println("Sensor #2 was asleep, waking up now");
-      sensor2.sleepModeOff();
-      delay(150); // wait for it to wake up
-    }
-    sensor2.setDefaultSettings(); // return to default settings 
-    // in case they were set differenctly by a previous example
-
-    sensor2.setTHighC(32); // set high threshhold
-    sensor2.setTLowC(23); // set low threshhold
-
-    Serial.print("\tThighF: ");
-    Serial.print(sensor2.getTHighF(), 2);
-    Serial.print("\tTlowF: ");
-    Serial.println(sensor2.getTLowF(), 2); // no getTLowC function
-  }
-
+//
+//  // SENSOR #1
+//  if (isRespondingSensor1 == S_ALIVE)
+//  {
+//    // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
+//    if (sensor1.getSleepMode() == true)
+//    {
+//      Serial.println("Sensor #1 was asleep, waking up now");
+//      sensor1.sleepModeOff();
+//      delay(150); // wait for it to wake up
+//    }
+//
+//    sensor1.setDefaultSettings(); // return to default settings 
+//    // in case they were set differenctly by a previous example
+//
+//    sensor1.setTHighC(32); // set high threshhold
+//    sensor1.setTLowC(23); // set low threshhold
+//
+//    Serial.print("\tThighF: ");
+//    Serial.print(sensor1.getTHighF(), 2);
+//    Serial.print("\tTlowF: ");
+//    Serial.println(sensor1.getTLowF(), 2); // no getTLowC function
+//  }
+//
+//
+//
+//
+//
+//
+//  // SENSOR #2
+//  if (isRespondingSensor2 == S_ALIVE)
+//  {
+//    // check to see if the sensor might be in sleep mode (maybe from a previous arduino example)
+//    if (sensor2.getSleepMode() == true)
+//    {
+//      Serial.println("Sensor #2 was asleep, waking up now");
+//      sensor2.sleepModeOff();
+//      delay(150); // wait for it to wake up
+//    }
+//    sensor2.setDefaultSettings(); // return to default settings 
+//    // in case they were set differenctly by a previous example
+//
+//    sensor2.setTHighC(32); // set high threshhold
+//    sensor2.setTLowC(23); // set low threshhold
+//
+//    Serial.print("\tThighF: ");
+//    Serial.print(sensor2.getTHighF(), 2);
+//    Serial.print("\tTlowF: ");
+//    Serial.println(sensor2.getTLowF(), 2); // no getTLowC function
+//  }
+//
 
 
 
@@ -553,13 +579,23 @@ void wakeupSensors(void)
 //-------------------------------------------------
 void setSensorsRate (void)
 {
-  sensor1.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
-  sensor2.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
 
-  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_125MS); // 8Hz
-  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
-  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_1000MS); // 1Hz
-  // sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_4000MS); // 1 time every 4 seconds
+Serial.print("Changing sensors data rate...");
+
+    int cnt_sensors;
+    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors)
+    {
+      as6221Data[cnt_sensors].sensor.setConversionCycleTime(AS6212_CONVERSION_CYCLE_TIME_250MS); // 4Hz
+    }
+
+  // Other possible rates
+  //----------------------
+  // AS6212_CONVERSION_CYCLE_TIME_125MS // 8Hz
+  // AS6212_CONVERSION_CYCLE_TIME_250MS // 4Hz
+  // AS6212_CONVERSION_CYCLE_TIME_1000MS // 1Hz
+  // AS6212_CONVERSION_CYCLE_TIME_4000MS // 1 time every 4 seconds
+
+  Serial.println("done!");
   
 }// END OF FUNCTION
 
@@ -590,6 +626,78 @@ void setUpPins (void)
 
 
 
+//-------------------------------------------------
+void printI2CAddress (byte addressToDisplay)
+{
 
+  Serial.print("0x");
+ if (addressToDisplay<16)
+ { 
+      Serial.print("0");
+  }
+  Serial.print(addressToDisplay,HEX);
+
+  
+}// END OF FUNCTION
+
+
+
+//-------------------------------------------------
+void allocateSensorAddress (void)
+{
+
+    int cnt_sensors;
+    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors)
+    {
+      as6221Data[cnt_sensors].address = i2cAddresses[cnt_sensors];
+    }
+
+
+}// END OF FUNCTION
+
+
+//-------------------------------------------------
+void setUpSensors (void)
+{
+
+  // Allocate sensor addresses
+  allocateSensorAddress();
+
+  // Start the I2C comm
+  Wire.begin();
+
+  // Scan
+  i2cQuickScan();
+
+  // Check +wakeup
+  checkSensors();
+
+  setSensorsRate();
+  
+}// END OF FUNCTION
+
+
+
+//-------------------------------------------------
+void collectSensorValues (void)
+{
+    int cnt_sensors;
+    for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors)
+    {
+        // Check if we were able to access it earlier via I2C
+        if (as6221Data[cnt_sensors].isResponding == S_ALIVE) 
+        {
+          as6221Data[cnt_sensors].rawCurrentTemperature = as6221Data[cnt_sensors].sensor.readTempC();
+        }
+    }
+}// END OF FUNCTION
+
+
+
+//-------------------------------------------------
+void updatePrevValues(void)
+{
+
+}// END OF FUNCTION
 
 //END OF FILE
