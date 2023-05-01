@@ -42,10 +42,14 @@
 #define T_UNDEF     99
 
 // Different possible states of "isResponding", default: S_ALIVE
+// Updated for only at the start
 #define S_ALIVE   1
 #define S_MIA     2
 
-
+// To check if the measurement is valid, if not, do not use it in the filters and calculations, , default: MEAS_INVALID
+// Updated for every measurement
+#define MEAS_VALID      1
+#define MEAS_INVALID   0 
 
 
 // -------------------------- Define  --------------------------
@@ -59,6 +63,7 @@ struct temperatureSensorData
   AS6212    sensor;
   byte      address                           = 0x00;
   uint8_t   isResponding                      = S_ALIVE;
+  uint8_t   isMeasurementValid                = MEAS_VALID;
   float     rawCurrentTemperature             = 0.0;
   float     filteredPreviousTemperature       = 0.0;
   float     filteredDifferenceTemperature_mC  = 0.0;
