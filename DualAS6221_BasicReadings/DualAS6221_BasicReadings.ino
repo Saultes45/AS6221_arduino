@@ -31,6 +31,7 @@
 * Use structure instead of single global variables <---------------
 * Array of struct for modular nbr sensors (complex) -- done
 * Put threshold values in #define
+* Deal with invalid measurements: what are the exclusion rules? What are the consequences?
 * 
 * Done
 * -----
@@ -41,7 +42,7 @@
 * Moving average + increase/decrease -- done
 * Put operations in functions -- done
 * STDDEV -- done
-* Change separator for seial studio -- done
+* Change separators for serial studio -- done
 *
 * Potential
 * ---------
@@ -227,6 +228,43 @@ void sendDataSerial(void)
   t_start = currentTime_MS; //reset prev time
 
 
+  // Sensor struct - 5 fields (+1: is valid to add)
+  //-------------------------
+
+   int cnt_sensors;
+  for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors) 
+  {
+
+     // field #1: I2C address
+     printI2CAddress(as6221Data[cnt_sensors].address);
+    Serial.print(SERIAL_SEPARATOR); 
+  
+    // Check if we were able to access it earlier via I2C
+    if (as6221Data[cnt_sensors].isResponding == S_ALIVE) // 
+    {
+    
+    // field #2: Raw temperature
+    Serial.print(as6221Data[cnt_sensors].rawCurrentTemperature, NBR_FLOAT_DISPLAY);
+    Serial.print(SERIAL_SEPARATOR);
+
+    // field #3: Moving average on temperature
+   Serial.print(as6221Data[cnt_sensors].avg);
+   Serial.print(SERIAL_SEPARATOR);
+
+    // field #4: difference new avaerage and old average
+    Serial.print(as6221Data[cnt_sensors].filteredDifferenceTemperature_mC, NBR_FLOAT_DISPLAY);
+    Serial.print(SERIAL_SEPARATOR);
+
+       
+    }
+  } // END OF SENSOR LOOP
+
+
+
+
+
+
+  
 
   // Sensor #1 - 5 fields
   //----------------------
@@ -688,8 +726,20 @@ void collectSensorValues (void)
         if (as6221Data[cnt_sensors].isResponding == S_ALIVE) 
         {
           as6221Data[cnt_sensors].rawCurrentTemperature = as6221Data[cnt_sensors].sensor.readTempC();
+
+          // Check if measurement was valid
+          if  (as6221Data[cnt_sensors].rawCurrentTemperature > 0) // Placeholder
+          {
+            as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID;
+          }
+          else
+          {
+            as6221Data[cnt_sensors].isMeasurementValid == MEAS_INVALID;
+          }
+          
         }
-    }
+    }// END OF SENSOR LOOP
+    
 }// END OF FUNCTION
 
 
@@ -698,6 +748,66 @@ void collectSensorValues (void)
 void updatePrevValues(void)
 {
 
+   int cnt_sensors;
+  for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors) 
+  {
+    // Check if we were able to access it earlier via I2C AND the raw meas was valid
+    if (as6221Data[cnt_sensors].isResponding == S_ALIVE && as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID) 
+    {
+      as6221Data[cnt_sensors].filteredPreviousTemperature = movAvg[cnt_sensors];
+    }
+  } // END OF SENSOR LOOP
+
 }// END OF FUNCTION
+
+
+//-------------------------------------------------
+void performCalculations(void)
+{
+
+   int cnt_sensors;
+  for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors) 
+  {
+  
+    // Check if we were able to access it earlier via I2C AND the raw meas was valid
+    if (as6221Data[cnt_sensors].isResponding == S_ALIVE && as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID) 
+    {
+
+    
+    // Step 1: moving average
+    if (movAvg[cnt_sensors].push(&as6221Data[cnt_sensors].rawCurrentTemperature, &as6221Data[cnt_sensors].avg)) 
+    {
+    }
+    else
+    {
+      //
+    }
+
+
+    // Step 2: moving var
+    if (movVar[cnt_sensors].push(&as6221Data[cnt_sensors].rawCurrentTemperature, &as6221Data[cnt_sensors].var)) 
+    {
+    }
+    else
+    {
+      //
+    }
+
+
+    // Step 3: diff
+    as6221Data[cnt_sensors].filteredDifferenceTemperature_mC = as6221Data[cnt_sensors].avg - as6221Data[cnt_sensors].filteredPreviousTemperature;
+
+
+
+    // Step 4: trend
+    as6221Data[cnt_sensors].filteredTrendTemperature          = T_UNDEF;
+       
+    }
+  } // END OF SENSOR LOOP
+
+
+}// END OF FUNCTION
+
+
 
 //END OF FILE
