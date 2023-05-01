@@ -177,6 +177,7 @@ void i2cQuickScan(void)
   byte error, address;
   int nDevices;
 
+  Serial.println("Scanning I2C bus for devices");
   for(address = 1; address < 127; address++ ) 
   {
     // The i2c_scanner uses the return value of
@@ -203,7 +204,7 @@ void i2cQuickScan(void)
   if (nDevices == 0)
   Serial.println("No I2C devices found :(");
   else
-  Serial.println("Scan done");
+  Serial.println("Scan done!");
 } // END OF FUNCTION
 
 
@@ -500,7 +501,7 @@ void checkSensors(void)
       else
       {
         // If no problems are detected
-        Serial.println(" is good to go.");
+        Serial.println(" good to go");
         
         as6221Data[cnt_sensors].isResponding = S_ALIVE;   
       }
@@ -646,6 +647,7 @@ void setUpUART (void)
 {
 
   Serial.begin(USB_BAUDRATE);
+  delay(10);
   Serial.println(SO_SKETCH_MESSAGE);
   Serial.println("Dual AS6221 - Basic Readings");
   
