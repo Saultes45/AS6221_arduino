@@ -79,6 +79,8 @@ void allocateSensorAddress          (void);
 void setUpSensors                   (void);
 void collectSensorValues            (void);
 void updatePrevValues               (void);
+void performCalculations            (void);
+
 
 
 
