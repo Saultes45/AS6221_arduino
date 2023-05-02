@@ -250,6 +250,11 @@ void sendDataSerial(void)
     Serial.print(as6221Data[cnt_sensors].rawCurrentTemperature, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
 
+    // field #2.5: Raw temperature valid?
+//    Serial.print(as6221Data[cnt_sensors].isMeasurementValid);
+//    Serial.print(SERIAL_SEPARATOR);
+    
+
     // field #3: Moving average on temperature
    Serial.print(as6221Data[cnt_sensors].avg);
    Serial.print(SERIAL_SEPARATOR);
