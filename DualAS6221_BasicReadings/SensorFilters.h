@@ -28,17 +28,31 @@
 #define NUM_SAMPLES_MOVSTATS 20
 
 
-//MovingAverageFilter<double, double> movAvg_1(NUM_SAMPLES_MOVSTATS);
-//double avg_1;
-//
-//MovingVarianceFilter<double, double> movVar_1(NUM_SAMPLES_MOVSTATS);
-//double var_1;
-//
-//MovingAverageFilter<double, double> movAvg_2(NUM_SAMPLES_MOVSTATS);
-//double avg_2;
-//
-//MovingVarianceFilter<double, double> movVar_2(NUM_SAMPLES_MOVSTATS);
-//double var_2;
+
+// TODO: find a better way to do this. Max of 8 sensor on 1 I2C line
+MovingAverageFilter<float, float> movAvg_0(NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar_0(NUM_SAMPLES_MOVSTATS);
+
+MovingAverageFilter<float, float> movAvg_1(NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar_1(NUM_SAMPLES_MOVSTATS);
+
+MovingAverageFilter<float, float> movAvg_2(NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar_2(NUM_SAMPLES_MOVSTATS);
+
+MovingAverageFilter<float, float> movAvg_3(NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar_3(NUM_SAMPLES_MOVSTATS);
+
+MovingAverageFilter<float, float> movAvg_4(NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar_4(NUM_SAMPLES_MOVSTATS);
+
+MovingAverageFilter<float, float> movAvg_5(NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar_5(NUM_SAMPLES_MOVSTATS);
+
+MovingAverageFilter<float, float> movAvg_6(NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar_6(NUM_SAMPLES_MOVSTATS);
+
+MovingAverageFilter<float, float> movAvg_7(NUM_SAMPLES_MOVSTATS);
+MovingVarianceFilter<float, float> movVar_7(NUM_SAMPLES_MOVSTATS);
 
 
 

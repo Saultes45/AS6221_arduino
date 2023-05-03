@@ -73,12 +73,20 @@ struct temperatureSensorData
   //Results of filters
   float avg;
   float var;
+
+  byte movAvgSuccess = MEAS_UNKNOWN;
+  byte movVarSuccess = MEAS_UNKNOWN;
+
   
 };
 
 // After loooong hours of debuging on a Sat at 3 AM, you cannot put that in the struct 
-MovingAverageFilter<float, float> movAvg[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
-MovingVarianceFilter<float, float> movVar[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
+//MovingAverageFilter<float, float> movAvg[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
+//MovingVarianceFilter<float, float> movVar[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
+
+
+
+
 
 // global structures
 temperatureSensorData as6221Data[NBR_SENSORS];

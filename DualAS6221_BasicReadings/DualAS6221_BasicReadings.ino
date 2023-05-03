@@ -250,21 +250,47 @@ void sendDataSerial(void)
     Serial.print(as6221Data[cnt_sensors].rawCurrentTemperature, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
 
+#ifdef DISPLAY_SANITY
     // field #2.5: Raw temperature valid?
-//    Serial.print(as6221Data[cnt_sensors].isMeasurementValid);
-//    Serial.print(SERIAL_SEPARATOR);
+    Serial.print(as6221Data[cnt_sensors].isMeasurementValid);
+    Serial.print(SERIAL_SEPARATOR);
+
+        Serial.print(as6221Data[cnt_sensors].movAvgSuccess);
+    Serial.print(SERIAL_SEPARATOR);
+
+        Serial.print(as6221Data[cnt_sensors].movVarSuccess);
+    Serial.print(SERIAL_SEPARATOR);
+#endif
     
 
     // field #3: Moving average on temperature
-   Serial.print(as6221Data[cnt_sensors].avg);
+   Serial.print(as6221Data[cnt_sensors].avg, NBR_FLOAT_DISPLAY);
    Serial.print(SERIAL_SEPARATOR);
 
     // field #4: difference new average and old average
     Serial.print(as6221Data[cnt_sensors].filteredDifferenceTemperature_mC, NBR_FLOAT_DISPLAY);
     Serial.print(SERIAL_SEPARATOR);
 
+    // field #: 
+    Serial.print(as6221Data[cnt_sensors].filteredTrendTemperature);
+    Serial.print(SERIAL_SEPARATOR);
+    
+
+   // field #5: Moving average on temperature
+   Serial.print(as6221Data[cnt_sensors].var, NBR_FLOAT_DISPLAY);
+   Serial.print(SERIAL_SEPARATOR);
+
        
     }
+
+    else
+  {
+    for (int i=0; i<NBR_DISPLAY_FIELDS; i++)
+    {   
+      Serial.print(NO_DATA);
+      Serial.print(SERIAL_SEPARATOR);
+    }
+  }
   } // END OF SENSOR LOOP
 
 
@@ -761,9 +787,9 @@ void updatePrevValues(void)
   for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors) 
   {
     // Check if we were able to access it earlier via I2C AND the raw meas was valid
-    if (as6221Data[cnt_sensors].isResponding == S_ALIVE && as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID) 
+    if (as6221Data[cnt_sensors].isResponding == S_ALIVE && as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID && as6221Data[cnt_sensors].movAvgSuccess == MEAS_VALID) 
     {
-      movAvg[cnt_sensors].push(&as6221Data[cnt_sensors].rawCurrentTemperature, &as6221Data[cnt_sensors].filteredPreviousTemperature);
+      as6221Data[cnt_sensors].filteredPreviousTemperature = as6221Data[cnt_sensors].avg;
     }
   } // END OF SENSOR LOOP
 
@@ -774,46 +800,99 @@ void updatePrevValues(void)
 void performCalculations(void)
 {
 
-   int cnt_sensors;
-  for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors) 
-  {
+float temp_1 = 0.0;
+float temp_2 = 0.0;
   
     // Check if we were able to access it earlier via I2C AND the raw meas was valid
-    if (as6221Data[cnt_sensors].isResponding == S_ALIVE && as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID) 
+    if (as6221Data[0].isResponding == S_ALIVE && as6221Data[0].isMeasurementValid == MEAS_VALID) 
     {
-
-    
     // Step 1: moving average
     //-----------------------
-    float temp_1 = as6221Data[cnt_sensors].rawCurrentTemperature;
-    float temp_2 = as6221Data[cnt_sensors].avg;
-    if ( movAvg[cnt_sensors].push(&temp_1, &temp_2) ) 
+    temp_1 = as6221Data[0].rawCurrentTemperature;
+    temp_2 = as6221Data[0].avg;
+    if ( movAvg_0.push(&temp_1, &temp_2) ) 
     {
       // Then SUCCESS
+      as6221Data[0].avg = temp_2;
+      as6221Data[0].movAvgSuccess = MEAS_VALID;
     }
     else
     {
       // the averaging didn't work
+      as6221Data[0].movAvgSuccess = MEAS_INVALID;
     }
-
-
-
-
     // Step 2: moving var
     //-----------------------
-    temp_2 = as6221Data[cnt_sensors].var;
-    if ( movAvg[cnt_sensors].push(&temp_1, &temp_2) ) 
+    temp_2 = as6221Data[0].var;
+    if ( movVar_0.push(&temp_1, &temp_2) ) 
     {
       // Then SUCCESS
+      as6221Data[0].var = temp_2;
+      as6221Data[0].movVarSuccess = MEAS_VALID;
     }
     else
     {
       // the variance calculation didn't work
+      as6221Data[0].movVarSuccess = MEAS_INVALID;
     }
+
+    } // END OF SANITY CHECK
+
+
+
+
+
+// Check if we were able to access it earlier via I2C AND the raw meas was valid
+    if (as6221Data[1].isResponding == S_ALIVE && as6221Data[1].isMeasurementValid == MEAS_VALID) 
+    {
+    // Step 1: moving average
+    //-----------------------
+    temp_1 = as6221Data[1].rawCurrentTemperature;
+    temp_2 = as6221Data[1].avg;
+    if ( movAvg_1.push(&temp_1, &temp_2) ) 
+    {
+      // Then SUCCESS
+      as6221Data[1].avg = temp_2;
+      as6221Data[1].movAvgSuccess = MEAS_VALID;
+    }
+    else
+    {
+      // the averaging didn't work
+      as6221Data[1].movAvgSuccess = MEAS_INVALID;
+    }
+    // Step 2: moving var
+    //-----------------------
+    temp_2 = as6221Data[1].var;
+    if ( movVar_1.push(&temp_1, &temp_2) ) 
+    {
+      // Then SUCCESS
+      as6221Data[1].var = temp_2*1000;
+      as6221Data[1].movVarSuccess = MEAS_VALID;
+    }
+    else
+    {
+      // the variance calculation didn't work
+      as6221Data[1].movVarSuccess = MEAS_INVALID;
+    }
+
+    } // END OF SANITY CHECK
+
+
+
+// TODO: continue from 3 to 8
+
+ // Part #2: diff and trend
+int cnt_sensors;
+  for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors) 
+  {
+  
+    // Check if we were able to access it earlier via I2C AND the raw meas was valid
+    if (as6221Data[cnt_sensors].isResponding == S_ALIVE && as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID && as6221Data[cnt_sensors].movAvgSuccess == MEAS_VALID) 
+    {
 
 
     // Step 3: diff
-    as6221Data[cnt_sensors].filteredDifferenceTemperature_mC = as6221Data[cnt_sensors].avg - as6221Data[cnt_sensors].filteredPreviousTemperature;
+    as6221Data[cnt_sensors].filteredDifferenceTemperature_mC = (as6221Data[cnt_sensors].avg - as6221Data[cnt_sensors].filteredPreviousTemperature)*1000.0;
 
 
 
@@ -837,7 +916,7 @@ void performCalculations(void)
       }
     }
        
-    }
+    } // END OF SANITY CHECK
   } // END OF SENSOR LOOP
 
 

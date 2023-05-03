@@ -36,6 +36,7 @@
 #define NBR_FLOAT_DISPLAY   6
 #define ADD_CRC // define if we should calculate and return a CRC of the message to the PC
 #define NO_DATA "---"
+#define DISPLAY_SANITY
 #else
 #define SERIAL_SEPARATOR "," 
 #define SERIAL_SOM "$"
@@ -43,6 +44,7 @@
 #define NBR_FLOAT_DISPLAY   6
 #define ADD_CRC // define if we should calculate and return a CRC of the message to the PC
 #define NO_DATA "---"
+//#define DISPLAY_SANITY // not yet implemented on Serial Studio
 #endif
 
 
