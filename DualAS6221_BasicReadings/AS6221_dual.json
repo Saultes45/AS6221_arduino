@@ -73,8 +73,8 @@
                     "graph": true,
                     "led": false,
                     "log": false,
-                    "max": 3,
-                    "min": -1,
+                    "max": 1.5,
+                    "min": -1.5,
                     "title": "Trend (filtered)",
                     "units": "N/A",
                     "value": "%7",
@@ -111,7 +111,7 @@
                     "min": 18,
                     "title": "Raw temperature",
                     "units": "°C",
-                    "value": "%11",
+                    "value": "%10",
                     "widget": ""
                 },
                 {
@@ -125,7 +125,7 @@
                     "min": 18,
                     "title": "Filtered temperature",
                     "units": "°C",
-                    "value": "%12",
+                    "value": "%11",
                     "widget": ""
                 },
                 {
@@ -139,7 +139,7 @@
                     "min": -200,
                     "title": "Filtered difference",
                     "units": "m°C",
-                    "value": "%13",
+                    "value": "%12",
                     "widget": ""
                 },
                 {
@@ -149,11 +149,11 @@
                     "graph": true,
                     "led": false,
                     "log": false,
-                    "max": 3,
-                    "min": -1,
+                    "max": 1.5,
+                    "min": -1.5,
                     "title": "Trend (filtered)",
                     "units": "N/A",
-                    "value": "%14",
+                    "value": "%13",
                     "widget": "bar"
                 },
                 {
@@ -167,7 +167,7 @@
                     "min": 0,
                     "title": "StdDev",
                     "units": "m°C",
-                    "value": "%15",
+                    "value": "%14",
                     "widget": ""
                 }
             ],
