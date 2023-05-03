@@ -7,18 +7,18 @@
 
 
 // Calculate NTC resistance
-  average = 1023 / average - 1;
-  average = Rref/ average;
-  Serial.print("Thermistor resistance ");
-  Serial.println(average);
+average = 1023 / average - 1;
+average = Rref/ average;
+Serial.print("Thermistor resistance ");
+Serial.println(average);
 
-   float temperature;
-  temperature = average / nominal_resistance;     // (R/Ro)
-  temperature = log(steinhart);                  // ln(R/Ro)
-  temperature /= beta;                   // 1/B * ln(R/Ro)
-  temperature += 1.0 / (nominal_temeprature + 273.15); // + (1/To)
-  temperature = 1.0 / temperature;                 // Invert
- temperature -= 273.15;                         // convert absolute temp to C
-  Serial.print("Temperature ");
-  Serial.print(temperature);
-  Serial.println(" *C");
+float temperature;
+temperature = average / nominal_resistance;     // (R/Ro)
+temperature = log(steinhart);                  // ln(R/Ro)
+temperature /= beta;                   // 1/B * ln(R/Ro)
+temperature += 1.0 / (nominal_temeprature + 273.15); // + (1/To)
+temperature = 1.0 / temperature;                 // Invert
+temperature -= 273.15;                         // convert absolute temp to C
+Serial.print("Temperature ");
+Serial.print(temperature);
+Serial.println(" *C");

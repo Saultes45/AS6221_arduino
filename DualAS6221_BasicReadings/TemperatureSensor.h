@@ -61,23 +61,23 @@
 //// -------------------------- Struct (global) --------------------------
 struct temperatureSensorData
 {
-  AS6212    sensor;
-  byte      address                           = 0x00;
-  uint8_t   isResponding                      = S_ALIVE;
-  uint8_t   isMeasurementValid                = MEAS_VALID;
-  float     rawCurrentTemperature             = 0.0;
-  float     filteredPreviousTemperature       = 0.0;
-  float     filteredDifferenceTemperature_mC  = 0.0;
-  uint8_t   filteredTrendTemperature          = T_UNDEF;
+	AS6212    sensor;
+	byte      address                           = 0x00;
+	uint8_t   isResponding                      = S_ALIVE;
+	uint8_t   isMeasurementValid                = MEAS_VALID;
+	float     rawCurrentTemperature             = 0.0;
+	float     filteredPreviousTemperature       = 0.0;
+	float     filteredDifferenceTemperature_mC  = 0.0;
+	uint8_t   filteredTrendTemperature          = T_UNDEF;
 
-  //Results of filters
-  float avg;
-  float var;
+	//Results of filters
+	float avg;
+	float var;
 
-  byte movAvgSuccess = MEAS_UNKNOWN;
-  byte movVarSuccess = MEAS_UNKNOWN;
+	byte movAvgSuccess = MEAS_UNKNOWN;
+	byte movVarSuccess = MEAS_UNKNOWN;
 
-  
+
 };
 
 // After loooong hours of debuging on a Sat at 3 AM, you cannot put that in the struct 
