@@ -27,18 +27,17 @@
 // From library manager
 #include <Wire.h>                  // for I2c Comm to the sensors
 #include "SparkFun_AS6212_Qwiic.h" // for communicating with the T sensor AS6221
-#include "SensorFilters.h"
-//#include "SoftFilters.h"          // for circular buffer for moving average and std dev
+#include "SensorFilters.h"         // for circular buffer for moving average and std dev
 #include "SensorAddresses.h"
 
 
-#define TOLERANCE_MC_PER_S 7.0 // in milli deg C/s, defines when we consider the temperature stable, increasing or decreasing
+#define TOLERANCE_MC_PER_S 1.3 // in milli deg C/s, defines when we consider the temperature stable, increasing or decreasing
 
 
 // Different possible states of "filteredTrendTemperature", default: T_UNDEF
 #define T_STABLE    0
-#define T_DECREASE  1
-#define T_INCREASE  2
+#define T_DECREASE  -1
+#define T_INCREASE  1
 #define T_UNDEF     99
 
 // Different possible states of "isResponding", default: S_ALIVE
@@ -68,14 +67,14 @@ struct temperatureSensorData
 	float     rawCurrentTemperature             = 0.0;
 	float     filteredPreviousTemperature       = 0.0;
 	float     filteredDifferenceTemperature_mC  = 0.0;
-	uint8_t   filteredTrendTemperature          = T_UNDEF;
+	int   filteredTrendTemperature          = T_UNDEF;
 
 	//Results of filters
-	float avg;
-	float var;
+	float     avg                               = 0.0;
+	float     var                               = 0.0;
 
-	byte movAvgSuccess = MEAS_UNKNOWN;
-	byte movVarSuccess = MEAS_UNKNOWN;
+	byte      movAvgSuccess                     = MEAS_UNKNOWN;
+	byte      movVarSuccess                     = MEAS_UNKNOWN;
 
 
 };
@@ -85,16 +84,8 @@ struct temperatureSensorData
 //MovingVarianceFilter<float, float> movVar[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
 
 
-
-
-
-// global structures
+// Global structures
 temperatureSensorData as6221Data[NBR_SENSORS];
-//temperatureSensorData dataS2;
-
-
-
-
 
 
 
