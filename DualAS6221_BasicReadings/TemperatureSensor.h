@@ -67,7 +67,7 @@ struct temperatureSensorData
 	float     rawCurrentTemperature             = 0.0;
 	float     filteredPreviousTemperature       = 0.0;
 	float     filteredDifferenceTemperature_mC  = 0.0;
-	int   filteredTrendTemperature          = T_UNDEF;
+	int       filteredTrendTemperature          = T_UNDEF;
 
 	//Results of filters
 	float     avg                               = 0.0;
