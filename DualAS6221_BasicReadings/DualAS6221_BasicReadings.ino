@@ -487,8 +487,11 @@ void setUpSensors (void)
 
 	// Start the I2C comm
 	Wire.begin();
+  Wire.setClock(400000UL); // The Wire.begin() sets the default of 100kHz. Pushing it to Uno max: 400kHz, the AS6221 accepts: 1kHz to 3.4 MHz)
 
-	// Scan
+  //Note: the compiler defaults to integer and the 400000 is a large number, so I add 'UL' to the number to tell the compiler that it is a 'Unsigned Long' number
+
+	// Scan 
 	i2cQuickScan();
 
 	// Check +wakeup
