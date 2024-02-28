@@ -22,12 +22,11 @@
 */
 
 
-// Declare a const array of I2C addresses
-const uint8_t i2cAddresses[] = {0x49, 0x45, 0x46, 0x47, 0xAA, 0x50}; // They should all be different, order dosen't matter
 
 
 
-#define NBR_SENSORS 2 // Controls how many sensor data are displayed, max is 8, consecutive, same order as above
+
+
 
 
 

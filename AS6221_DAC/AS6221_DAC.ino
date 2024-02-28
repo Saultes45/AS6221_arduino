@@ -8,7 +8,7 @@
 * Metadata
 * Written by    : Nathanaël Esnault
 * Verified by   : Nathanaël Esnault
-* Creation date : 2023-04-25
+* Creation date : 2024-02-28
 * Version       : 1.1 (finished the 2023-05-01)
 * Modifications :
 * Known bugs    :
@@ -28,23 +28,9 @@
 *
 * TODO
 * ----
-* Use structure instead of single global variables <---------------
-* Add (+1: is valid to add) to UART stream
-* Put threshold values in #define (sanity check)
-* Deal with invalid measurements: what are the exclusion rules? What are the consequences?
-* Deal of when the averaging didn't work
 * 
 * Done
 * -----
-* Check sensor are replying, use "---" otherwise -- done
-* for flag variables, use some #def for states -- done
-* Change datarate: CR -- done
-* Swap delay for HW timer ISR --- done
-* Moving average + increase/decrease -- done
-* Put operations in functions -- done
-* STDDEV -- done
-* Change separators for serial studio -- done
-* Array of struct for modular nbr sensors (complex) -- done
 *
 * Potential
 * ---------
@@ -116,7 +102,7 @@ void setup()
 void loop()
 {
 
-	if (readSensor == 1) // if the ISR flag is set then new teperature readings are ready 
+	if (readSensor == 1) // if the ISR flag is set then new temperature readings are ready 
 	{
 
 		readSensor  = 0; //reset the ISR flag
