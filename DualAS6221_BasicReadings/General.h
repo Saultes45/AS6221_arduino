@@ -27,6 +27,7 @@
 //#include "Arduino.h"
 #include "TemperatureSensor.h"
 #include "FrameDefinition.h"
+#include "VoltageFromTemperature.h"
 
 // -------------------------- Define  --------------------------
 

@@ -68,11 +68,27 @@
 
 
 // -------------------------- ISR functions  --------------------------
-ISR(TIMER1_COMPA_vect)
-{//timer1 interrupt 1Hz toggles pin 13 (LED)
-	//generates pulse wave of frequency 5Hz/2 = 2.5Hz (takes two cycles for full wave- toggle high then toggle low)
+// ISR(TIMER1_COMPA_vect)
+// {//timer1 interrupt 1Hz toggles pin 13 (LED)
+// 	//generates pulse wave of frequency 5Hz/2 = 2.5Hz (takes two cycles for full wave- toggle high then toggle low)
 
-	readSensor = 1; //set the flag to indicate the loop to do a sensor read
+// 	readSensor = 1; //set the flag to indicate the loop to do a sensor read
+
+// 	if (toggleLED){
+// 		digitalWrite(LED_BUILTIN,HIGH);
+// 		toggleLED = 0;
+// 	}
+// 	else{
+// 		digitalWrite(LED_BUILTIN,LOW);
+// 		toggleLED = 1;
+// 	}
+// }
+
+
+// functions called by IntervalTimer should be short, run as quickly as
+// possible, and should avoid calling other functions if possible.
+void blinkLED() {
+  	readSensor = 1; //set the flag to indicate the loop to do a sensor read
 
 	if (toggleLED){
 		digitalWrite(LED_BUILTIN,HIGH);
@@ -84,8 +100,8 @@ ISR(TIMER1_COMPA_vect)
 	}
 }
 
-
-
+// Create an IntervalTimer object 
+IntervalTimer myTimer;
 
 
 // -------------------------- SetUp --------------------------
@@ -106,6 +122,8 @@ void setup()
 
 	sei();//allow interrupts
 
+  myTimer.begin(blinkLED, 150000);  // Teensy trigger an ISR every 0.15 seconds
+
 }// END OF SET UP
 
 
@@ -115,7 +133,8 @@ void setup()
 // -------------------------- Loop --------------------------
 void loop()
 {
-
+  // readSensor = 1; //set the flag to indicate the loop to do a sensor read
+  // delay(1000);
 	if (readSensor == 1) // if the ISR flag is set then new teperature readings are ready 
 	{
 
@@ -294,18 +313,18 @@ void sendDataSerial(void)
 void prepareHWTimerInterrupt(void)
 {
 
-	//set timer1 interrupt at 5Hz (should really be 8Hz)
-	TCCR1A = 0;// set entire TCCR1A register to 0
-	TCCR1B = 0;// same for TCCR1B
-	TCNT1  = 0;//initialize counter value to 0
-	// set compare match register for 1hz increments
-	OCR1A = 3124;// = (16*10^6) / (8*1024) - 1 (must be <65536)
-	// turn on CTC mode
-	TCCR1B |= (1 << WGM12);
-	// Set CS10 and CS12 bits for 1024 prescaler
-	TCCR1B |= (1 << CS12) | (1 << CS10);  
-	// enable timer compare interrupt
-	TIMSK1 |= (1 << OCIE1A);
+// 	//set timer1 interrupt at 5Hz (should really be 8Hz)
+// 	TCCR1A = 0;// set entire TCCR1A register to 0
+// 	TCCR1B = 0;// same for TCCR1B
+// 	TCNT1  = 0;//initialize counter value to 0
+// 	// set compare match register for 1hz increments
+// 	OCR1A = 3124;// = (16*10^6) / (8*1024) - 1 (must be <65536)
+// 	// turn on CTC mode
+// 	TCCR1B |= (1 << WGM12);
+// 	// Set CS10 and CS12 bits for 1024 prescaler
+// 	TCCR1B |= (1 << CS12) | (1 << CS10);  
+// 	// enable timer compare interrupt
+// 	TIMSK1 |= (1 << OCIE1A);
 
 }// END OF FUNCTION
 
@@ -672,7 +691,73 @@ void performCalculations(void)
 	} // END OF SENSOR LOOP
 
 
+
+  //-------------------------------------------------
+void calculateDACVoltageFromTemperature(void)
+{
+
+// @ brief
+
+// input: none, we use the global variables to get the AS6221 temperature
+// output: none, we use 
+	int cnt_sensors;
+	for (cnt_sensors = 0; cnt_sensors < NBR_SENSORS; ++cnt_sensors) 
+	{
+
+    as6221Data[cnt_sensors].DACConvSuccess = 0; // init to "unsucessful"
+
+		// Check if we were able to access it earlier via I2C AND the raw meas was valid
+		if (as6221Data[cnt_sensors].isResponding == S_ALIVE &&
+    as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID &&
+    as6221Data[cnt_sensors].movAvgSuccess == MEAS_VALID)
+		{
+			
+      as6221Data[cnt_sensors].DACConvSuccess = 1; // Set the success flag
+
+      float Rt = (float)R0 * exp(BETA*(1/(as6221Data[cnt_sensors].avg+KELVIN)-1/(T0_DEG+KELVIN)));
+      as6221Data[cnt_sensors].dacValue = V0 * (Rt/(Rt+RDIV));
+
+		}
+	} // END OF SENSOR LOOP
+
 }// END OF FUNCTION
+
+
+
+  //-------------------------------------------------
+bool  updateDAC(int AS6221Source)
+{
+  // @ brief
+
+// input: AS6221Source: the index of the AS6221 that you whish to use for outputting to the DAC 
+// output: updateSucessful: a boolean that indicate if the DAC output values been updated
+
+bool updateSucessful = false; // init to false
+
+if (AS6221Source >= 0 && AS6221Source <= NBR_SENSORS)
+{
+
+  	// Check if we were able to access it earlier via I2C AND the raw meas was valid
+		if (as6221Data[cnt_sensors].isResponding == S_ALIVE &&
+    as6221Data[cnt_sensors].isMeasurementValid == MEAS_VALID &&
+    as6221Data[cnt_sensors].movAvgSuccess == MEAS_VALID &&
+    as6221Data[cnt_sensors].DACConvSuccess == 1)
+		{
+        // HERE: SPI communication with the 16-bit DAC
+  // mydac.SetVoltage(as6221Data[AS6221Source].dacValue)
+      bool updateSucessful = true; // update the flag this function returns
+    }
+
+
+}
+
+
+return updateSucessful
+
+
+}// END OF FUNCTION
+
+
 
 
 

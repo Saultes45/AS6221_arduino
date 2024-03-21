@@ -76,10 +76,13 @@ struct temperatureSensorData
 	byte      movAvgSuccess                     = MEAS_UNKNOWN;
 	byte      movVarSuccess                     = MEAS_UNKNOWN;
 
+  // For the DAC
+  float dacValue                              = 0.0 
+  byte  DACConvSuccess                        = 1; // todo: create a list of possible values
 
 };
 
-// After loooong hours of debuging on a Sat at 3 AM, you cannot put that in the struct 
+// After loooong hours of debuging on a Sat at 3 AM, you cannot put the following 2 lines in the struct: 
 //MovingAverageFilter<float, float> movAvg[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
 //MovingVarianceFilter<float, float> movVar[NBR_SENSORS](NUM_SAMPLES_MOVSTATS);
 

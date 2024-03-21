@@ -1,13 +1,13 @@
 /* ========================================
 *
-* Copyright Veriphi, 2023
+* Copyright Veriphi, 2024
 * All Rights Reserved
 * UNPUBLISHED, LICENSED SOFTWARE.
 *
 * Metadata
 * Written by    : Nathanaël Esnault
 * Verified by   : Nathanaël Esnault
-* Creation date : 2023-04-29
+* Creation date : 202-03-21
 * Version       : 1.1 (finished the 2023-04-29)
 * Modifications :
 * Known bugs    :
@@ -21,13 +21,13 @@
 * ========================================
 */
 
+#define R0    10000
+#define RDIV  10000
+#define V0    3.3
+#define BETA 3380
+#define T0_DEG 25
+#define KELVIN 273.15
 
-// Declare a const array of I2C addresses
-const uint8_t i2cAddresses[] = {0x45, 0x49, 0x46, 0x47, 0xAA, 0x50}; // They should all be different, order dosen't matter
-
-
-
-#define NBR_SENSORS 2 // Controls how many sensor data are displayed, max is 8, consecutive, same order as above
 
 
 
