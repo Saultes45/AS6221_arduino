@@ -101,7 +101,7 @@ void blinkLED() {
 }
 
 // Create an IntervalTimer object 
-IntervalTimer myTimer;
+//IntervalTimer myTimer;
 
 
 // -------------------------- SetUp --------------------------
@@ -120,9 +120,9 @@ void setup()
 
 	prepareHWTimerInterrupt();
 
-	sei();//allow interrupts
+	//sei();//allow interrupts
 
-  myTimer.begin(blinkLED, 150000);  // Teensy trigger an ISR every 0.15 seconds
+  //myTimer.begin(blinkLED, 150000);  // Teensy trigger an ISR every 0.15 seconds
 
 }// END OF SET UP
 

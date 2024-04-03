@@ -77,7 +77,7 @@ struct temperatureSensorData
 	byte      movVarSuccess                     = MEAS_UNKNOWN;
 
   // For the DAC
-  float dacValue                              = 0.0 
+  float dacValue                              = 0.0; 
   byte  DACConvSuccess                        = 1; // todo: create a list of possible values
 
 };
