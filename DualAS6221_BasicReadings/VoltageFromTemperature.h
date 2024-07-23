@@ -44,6 +44,13 @@
 #define KELVIN 273.15
 
 
+#include "DAC8552.h"
+#include <math.h> // for dac calculations
+
+
+//  HW SPI
+DAC8552 mydac(10);
+
 
 
 

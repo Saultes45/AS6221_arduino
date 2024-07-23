@@ -118,11 +118,18 @@ void setup()
 
 	Serial.println(EO_SETUP_MESSAGE);
 
-	prepareHWTimerInterrupt();
+	//prepareHWTimerInterrupt();
 
 	//sei();//allow interrupts
 
   //myTimer.begin(blinkLED, 150000);  // Teensy trigger an ISR every 0.15 seconds
+
+  Serial.print("DAC8552_LIB_VERSION: ");
+  Serial.println(DAC8552_LIB_VERSION);
+
+  SPI.begin();
+
+  mydac.begin();
 
 }// END OF SET UP
 
